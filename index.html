@@ -44,6 +44,30 @@ body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--font-body);
 nav.menu { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 nav.menu a { font: 600 0.95rem var(--font-display); text-decoration: none; color: var(--fg); padding: 0.45rem 0.85rem;
   border-radius: 999px; border: 1px solid var(--line); background: var(--bg); }
+.so-cel { display: none; }
+nav.menu button.ajuda-btn { font: 600 0.95rem var(--font-display); color: var(--fg); padding: 0.45rem 0.85rem; cursor: pointer;
+  border-radius: 999px; border: 1px dashed var(--muted); background: transparent; }
+dialog.ajuda { width: min(46rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--panel); color: var(--fg); box-shadow: 0 10px 40px rgba(0,0,0,0.35); }
+dialog.ajuda::backdrop { background: rgba(0,0,0,0.45); }
+.ajuda-topo { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding: 0.8rem 1.1rem; background: var(--panel); border-bottom: 1px solid var(--line); }
+.ajuda-topo h2 { margin: 0; font: 800 1.15rem var(--font-display); }
+.ajuda-topo button { font: 600 0.9rem var(--font-body); padding: 0.4rem 0.8rem; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--fg); cursor: pointer; }
+.ajuda-texto { padding: 0.4rem 1.1rem 1.4rem; font-size: 0.95rem; line-height: 1.55; }
+.ajuda-texto h2 { font: 700 1.1rem var(--font-display); margin: 1.4rem 0 0.4rem; }
+.ajuda-texto h3 { margin: 1.1rem 0 0.3rem; }
+.ajuda-texto p, .ajuda-texto li { max-width: 68ch; }
+.ajuda-texto ul, .ajuda-texto ol { padding-left: 1.3rem; }
+.ajuda-texto li { margin: 0.25rem 0; }
+.ajuda-texto blockquote { margin: 0.8rem 0; padding: 0.6rem 0.9rem; border-left: 4px solid var(--accent); background: var(--bg); border-radius: 0 8px 8px 0; }
+.ajuda-texto blockquote p { margin: 0; }
+.ajuda-texto .tabela { overflow-x: auto; }
+.ajuda-texto table { border-collapse: collapse; width: 100%; font-size: 0.88rem; font-variant-numeric: tabular-nums; margin: 0.5rem 0; }
+.ajuda-texto th, .ajuda-texto td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line); }
+.ajuda-texto th { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+.ajuda-texto a { color: var(--accent); }
 nav.menu a[aria-current="page"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .corpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(300px, 380px) 1fr; }
@@ -109,7 +133,15 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   .corpo { grid-template-columns: 1fr; grid-template-rows: 58vh auto; overflow-y: auto; }
   .palco { grid-row: 1; height: 58vh; }
   .painel { grid-row: 2; border-right: 0; border-top: 1px solid var(--line); overflow: visible; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-  nav.menu a { padding: 0.4rem 0.7rem; font-size: 0.9rem; }
+  nav.menu { flex-wrap: nowrap; gap: clamp(0.15rem, 1vw, 0.3rem); width: 100%; }
+  nav.menu a, nav.menu button.ajuda-btn { padding: 0.35rem clamp(0.3rem, 1.6vw, 0.6rem); font-size: clamp(0.66rem, 3.2vw, 0.82rem); white-space: nowrap; }
+  .so-pc { display: none; }
+  .so-cel { display: inline; }
+  nav.menu button.ajuda-btn { margin-left: auto; min-width: 2rem; font-weight: 800; }
+  .ajuda-texto { padding-inline: 0.8rem; font-size: 0.92rem; }
+  .ajuda-texto table { font-size: 0.74rem; }
+  .ajuda-texto th, .ajuda-texto td { padding: 0.3rem 0.25rem; }
+  .ajuda-texto th { font-size: 0.7rem; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -120,10 +152,176 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   <nav class="menu" aria-label="Escolha o mapa">
     <a href="#encostas" data-v="encostas">Encostas</a>
     <a href="#rodovias" data-v="rodovias">Rodovias</a>
-    <a href="#crescimento" data-v="crescimento">Crescimento da cidade</a>
+    <a href="#crescimento" data-v="crescimento">Crescimento<span class="so-pc"> da cidade</span></a>
     <a href="#mata" data-v="mata">Mata</a>
+    <button type="button" class="ajuda-btn" id="ajuda-abrir" aria-haspopup="dialog" aria-label="Sobre e ajuda" title="Sobre e ajuda"><span class="so-pc">Sobre e ajuda</span><span class="so-cel" aria-hidden="true">?</span></button>
   </nav>
 </header>
+<dialog class="ajuda" id="ajuda" aria-labelledby="ajuda-titulo">
+  <div class="ajuda-topo"><h2 id="ajuda-titulo">Sobre os mapas</h2><button type="button" id="ajuda-fechar">Fechar</button></div>
+  <div class="ajuda-texto">
+<!--AJUDA-INICIO-->
+<p>Mapas interativos de Nova Petrópolis (RS) feitos a partir de imagens de satélite, para
+ajudar moradores, Defesa Civil e quem usa as rodovias a enxergar onde o terreno é mais
+frágil, como a cidade cresce e o que acontece com a mata.</p>
+<h2>Por que estes mapas</h2>
+<p>Em maio de 2024, as chuvas extremas no Rio Grande do Sul provocaram centenas de
+deslizamentos em Nova Petrópolis. Muitos deles aconteceram em encostas que já davam
+sinais de fragilidade quando vistas de cima: declive forte, terreno côncavo que junta
+água, beira de estrada e mata cortada. Estes mapas reúnem essas pistas num lugar só,
+numa linguagem simples, para que mais gente saiba onde olhar com atenção antes da próxima
+chuva forte.</p>
+<h2>Quanto os mapas acertam</h2>
+<blockquote>
+<p><strong>Resumo:</strong> as encostas pintadas no mapa ocupam <strong>16% do município</strong> e reuniram
+<strong>68% dos deslizamentos de 2024</strong>. Nas áreas de atenção <strong>muito alta</strong>, houve <strong>6,2 vezes
+mais deslizamentos</strong> que na média do município.</p>
+</blockquote>
+<h3>Encostas: deslizamentos de 2024 em cada cor</h3>
+<div class="tabela"><table>
+<thead>
+<tr>
+<th>Cor no mapa</th>
+<th style="text-align: right;">Área do município</th>
+<th style="text-align: right;">Deslizamentos de 2024</th>
+<th style="text-align: right;">Comparado à média</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🟥 Atenção muito alta</td>
+<td style="text-align: right;">5%</td>
+<td style="text-align: right;"><strong>39%</strong></td>
+<td style="text-align: right;"><strong>6,2×</strong></td>
+</tr>
+<tr>
+<td>🟧 Atenção alta</td>
+<td style="text-align: right;">11%</td>
+<td style="text-align: right;"><strong>29%</strong></td>
+<td style="text-align: right;"><strong>2,4×</strong></td>
+</tr>
+<tr>
+<td>Sem cor (média e baixa)</td>
+<td style="text-align: right;">84%</td>
+<td style="text-align: right;">32%</td>
+<td style="text-align: right;">0,5×</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>O teste usou os 335 deslizamentos de 2024 mapeados pelo Serviço Geológico do Brasil.
+  Cada parte do município foi avaliada por um modelo que <strong>não tinha visto</strong> os
+  deslizamentos daquela parte, para medir o acerto em lugares "novos" e não só repetir o
+  que o modelo decorou.</li>
+<li>Em outro inventário independente (pontos da NASA), 67% dos deslizamentos caíram nas
+  áreas coloridas.</li>
+<li>Os 15 pontos de deslizamento conhecidos de moradores ficaram todos em áreas de atenção
+  alta ou muito alta (14 em muito alta), e 9 de 13 quedas de barreira noticiadas nas
+  rodovias também.</li>
+<li><strong>Como ler:</strong> a cor diz onde é <em>mais provável</em>, não que vai deslizar. Mesmo em atenção
+  muito alta, só cerca de 3% do terreno deslizou em 2024, uma das chuvas mais fortes já
+  registradas. E um terço dos deslizamentos aconteceu em áreas sem cor: <strong>área sem cor
+  não é área sem risco</strong>.</li>
+</ul>
+<h3>Crescimento da cidade: a tendência acerta?</h3>
+<p>A tendência foi testada no passado: um modelo treinado só com o crescimento de 2006 a 2015
+apontou onde a cidade cresceria de 2016 a 2021, e o resultado foi comparado com o que de
+fato aconteceu.</p>
+<div class="tabela"><table>
+<thead>
+<tr>
+<th>Azul no mapa</th>
+<th style="text-align: right;">Virou cidade ali ou a até 100 m</th>
+<th style="text-align: right;">O próprio terreno virou cidade</th>
+<th style="text-align: right;">Comparado ao acaso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Forte</td>
+<td style="text-align: right;"><strong>71%</strong></td>
+<td style="text-align: right;">9,6%</td>
+<td style="text-align: right;"><strong>19×</strong></td>
+</tr>
+<tr>
+<td>Média</td>
+<td style="text-align: right;">57%</td>
+<td style="text-align: right;">5,3%</td>
+<td style="text-align: right;">11×</td>
+</tr>
+<tr>
+<td>Fraca</td>
+<td style="text-align: right;">52%</td>
+<td style="text-align: right;">4,1%</td>
+<td style="text-align: right;">8×</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>61%</strong> de tudo o que virou cidade de 2016 a 2021 ficou dentro do azul ou a até 100 m dele.</li>
+<li><strong>Como ler:</strong> o mapa acerta bem a <em>região</em> para onde a cidade vai, não o <em>lote</em>. O teste
+  cobriu 6 anos; em 10 anos, como no mapa, as taxas tendem a ser maiores.</li>
+</ul>
+<h2>Os mapas</h2>
+<ol>
+<li><strong>Encostas</strong>: áreas de atenção alta ou muito alta para deslizamento, setores de
+   risco oficiais do Serviço Geológico do Brasil e sinais de alerta no terreno. O modelo
+   olha o relevo (declive, forma da encosta, caminho da água), a cobertura do solo e o
+   histórico de corte da mata, e aprendeu com os deslizamentos de 2024 de toda a região da Serra,
+   não só do município.</li>
+<li><strong>Rodovias</strong>: trechos da BR-116 e da RS-235 mais sujeitos a queda de barreira, com a
+   quilometragem das placas, pontes e bueiros que podem entupir e deslizamentos
+   noticiados de 2016 a 2026. Cerca de 59% da BR-116 no município passa por encostas de
+   atenção alta ou muito alta.</li>
+<li><strong>Crescimento da cidade</strong>: a área urbana ano a ano desde 1985 e as regiões com tendência
+   de crescimento nos próximos 10 anos (cerca de 210 ha no ritmo atual). Mostra também
+   quanto do crescimento recente avançou sobre encostas de atenção.</li>
+<li><strong>Mata</strong>: mata nativa e plantações ano a ano desde 2001, onde foram cortadas e onde a mata
+   voltou, com destaque para cortes em encostas de atenção. De 2001 a 2025, cerca de
+   1.850 ha de mata ou plantação foram cortados e não voltaram (230 ha em encostas de
+   atenção), e cerca de 2.700 ha de mata surgiram ou voltaram.</li>
+</ol>
+<p>Cada mapa pode ser visto sobre imagem de satélite ou mapa simples, em 2D ou 3D, e cada
+painel traz os números de acerto ao lado da legenda.</p>
+<h2>Fontes</h2>
+<ul>
+<li>Imagens de satélite: Sentinel-2 (ESA/Copernicus) e Landsat (NASA/USGS)</li>
+<li>Relevo: Copernicus DEM, FABDEM e Terrain Tiles (AWS)</li>
+<li>Inventários de deslizamentos de 2024: Serviço Geológico do Brasil (SGB), UFRGS e NASA</li>
+<li>Setores de risco: SGB, via Defesa Civil de Nova Petrópolis</li>
+<li>Construções: Google Open Buildings</li>
+<li>Mata e plantações: MapBiomas Brasil (Coleção 11)</li>
+<li>Cobertura e perda de floresta: ESA WorldCover e Global Forest Change (Hansen/UMD)</li>
+<li>Geologia e solos: IBGE</li>
+<li>Chuva: UFRGS e NASA POWER</li>
+<li>Estradas e localidades: OpenStreetMap</li>
+<li>Notícias: Prefeitura de Nova Petrópolis, ABC+, Jornal do Comércio, GZH e Jornal A Ponte</li>
+<li>Fundo do mapa: Esri World Imagery e OpenFreeMap</li>
+</ul>
+<h2>Limitações</h2>
+<ul>
+<li>O relevo usado tem 30 m de resolução: encostas pequenas, cortes de estrada e aterros
+  recentes podem não aparecer.</li>
+<li>O modelo aprendeu principalmente com as chuvas de 2024; outro tipo de chuva pode
+  produzir outro padrão de deslizamentos.</li>
+<li>Profundidade do solo e drenagem de casas e estradas não são vistas por satélite e
+  pesam muito no risco real.</li>
+</ul>
+<h2>Aviso</h2>
+<p>Os mapas são estimativas feitas a partir de imagens de satélite e de um modelo estatístico.
+Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defesa Civil
+(telefone 199) nem laudos técnicos. Áreas sem cor não são áreas sem risco.</p>
+<!--AJUDA-FIM-->
+  </div>
+</dialog>
+<script>
+(() => {
+  const d = document.getElementById("ajuda");
+  document.getElementById("ajuda-abrir").addEventListener("click", () => { d.showModal(); d.scrollTop = 0; });
+  document.getElementById("ajuda-fechar").addEventListener("click", () => d.close());
+  d.addEventListener("click", e => { if (e.target === d) d.close(); });
+})();
+</script>
 <div class="corpo">
   <aside class="painel" id="painel" aria-live="polite"></aside>
   <div class="palco">
