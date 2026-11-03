@@ -63,6 +63,14 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid 
 .sw.ponto { border-radius: 50%; width: 0.95rem; height: 0.95rem; margin: 0 0.175rem; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
 .sw.linha { height: 0.4rem; border-radius: 2px; border: 0; }
 .sw.contorno { background: transparent !important; border: 2.5px dashed var(--sgb); }
+.legenda li small { display: block; color: var(--muted); font-size: 0.8rem; line-height: 1.3; }
+.acerto { margin: 0 0 1rem; padding: 0.6rem 0.75rem; border: 1px solid var(--line); border-radius: 8px; font-size: 0.88rem; }
+.acerto summary { cursor: pointer; font-weight: 600; }
+.acerto table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-variant-numeric: tabular-nums; }
+.acerto th, .acerto td { text-align: right; padding: 0.25rem 0.3rem; border-bottom: 1px solid var(--line); }
+.acerto th:first-child, .acerto td:first-child { text-align: left; }
+.acerto th { font-weight: 600; font-size: 0.78rem; color: var(--muted); }
+.acerto p { margin: 0.4rem 0 0; font-size: 0.82rem; color: var(--muted); }
 .sw.grad { width: 3.2rem; background: linear-gradient(90deg, rgba(51, 198, 224, 0.2), var(--proj)); }
 .sinais { margin: 0 0 1rem; padding-left: 1.2rem; display: grid; gap: 0.25rem; font-size: 0.93rem; }
 .sw.anel { border-radius: 50%; background: transparent !important; border: 3px solid var(--sem-setor); }
@@ -340,16 +348,30 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   // ---- vistas ----
   const vistas = {};
   const totalCasas = S.casas_resumo.reduce((s, r) => s + r.edificacoes, 0);
+  const pct = v => fmt(v, v < 10 ? 1 : 0);
   vistas.encostas = () => {
+    const E = S.acertos.encostas, K = n => E.classes.find(c => c.classe === n);
+    const mA = K("Muito alta"), al = K("Alta"), sem = ["Média", "Baixa"].map(K);
+    const sc = { area: sem[0].pct_area + sem[1].pct_area, desl: sem[0].pct_deslizamentos_sgb + sem[1].pct_deslizamentos_sgb };
+    sc.vezes = (sem[0].pct_area * sem[0].pct_area_atingida_2024 + sem[1].pct_area * sem[1].pct_area_atingida_2024) / sc.area / E.pct_area_atingida_media;
+    const linha = (nome, area, desl, vezes) => `<tr><td>${nome}</td><td>${pct(area)}%</td><td>${pct(desl)}%</td><td>${fmt(vezes, 1)}×</td></tr>`;
     const c1 = chave("ck-setores", "Setores de risco oficiais (SGB)", true, ["setores-f", "setores-l"]);
     return { ids: ["risco"], html: `<h2>Onde o terreno pode deslizar?</h2>
       <p>As cores mostram as encostas que merecem mais atenção em chuvas fortes, segundo um modelo feito com imagens de satélite e os deslizamentos de 2024.</p>
       ${buscaHTML("b-enc")}
       <ul class="legenda">
-        <li><span class="sw" style="background:var(--risco-muito)"></span>Atenção muito alta</li>
-        <li><span class="sw" style="background:var(--risco-alto)"></span>Atenção alta</li>
+        <li><span class="sw" style="background:var(--risco-muito)"></span><span>Atenção muito alta<small>${fmt(mA.vezes_media, 1)} vezes mais deslizamentos que a média em 2024</small></span></li>
+        <li><span class="sw" style="background:var(--risco-alto)"></span><span>Atenção alta<small>${fmt(al.vezes_media, 1)} vezes mais deslizamentos que a média em 2024</small></span></li>
         <li><span class="sw contorno"></span>Setor de risco oficial (Serviço Geológico do Brasil)</li>
       </ul>
+      <details class="acerto" open><summary>Quanto este mapa acerta?</summary>
+        <table><thead><tr><th>Cor no mapa</th><th>Área do município</th><th>Deslizamentos de 2024</th><th>Comparado à média</th></tr></thead><tbody>
+          ${linha("Muito alta", mA.pct_area, mA.pct_deslizamentos_sgb, mA.vezes_media)}
+          ${linha("Alta", al.pct_area, al.pct_deslizamentos_sgb, al.vezes_media)}
+          ${linha("Sem cor", sc.area, sc.desl, sc.vezes)}
+        </tbody></table>
+        <p>As áreas coloridas ocupam ${pct(mA.pct_area + al.pct_area)}% do município e reuniram ${pct(mA.pct_deslizamentos_sgb + al.pct_deslizamentos_sgb)}% dos ${E.n_sgb} deslizamentos de 2024 mapeados pelo SGB. Cada parte do município foi testada com um modelo que não tinha visto os deslizamentos daquela parte. Mesmo em atenção muito alta, só ${pct(mA.pct_area_atingida_2024)}% do terreno deslizou em 2024: a cor indica onde é mais provável, não que vai deslizar.</p>
+      </details>
       ${c1.html}
       <h3>Sinais de que o terreno está se mexendo</h3>
       <ul class="sinais"><li>Trincas novas no chão ou nas paredes</li><li>Árvores, postes ou muros inclinando</li><li>Portas e janelas emperrando</li><li>Água minando na encosta ou barro na água</li></ul>
@@ -392,6 +414,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   }
   const parar = () => { clearInterval(timer); timer = null; };
   vistas.crescimento = () => {
+    const G = S.acertos.crescimento, F = n => G.faixas.find(f => f.faixa === n);
     const C = S.crescimento, porAno = {}; C.anos.forEach(a => { porAno[a.ano] = a; });
     const c3 = chave("ck-risco-c", "Mostrar as encostas de atenção", false, ["risco"]);
     const ultimo = C.periodos.find(p => p.periodo === "2022–2026"), ant = C.periodos.find(p => p.periodo === "até 1990");
@@ -410,6 +433,12 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
         <li><span class="sw" style="background:var(--novo)"></span>Virou cidade nos últimos 3 anos</li>
         <li id="cr-proj"><span class="sw grad"></span>Tendência de crescimento, de possível a mais provável</li>
       </ul>
+      <details class="acerto" open><summary>Quanto a tendência acerta?</summary>
+        <table><thead><tr><th>Azul</th><th>Virou cidade ali ou a até 100 m</th><th>O próprio terreno virou cidade</th><th>Comparado ao acaso</th></tr></thead><tbody>
+          ${["forte", "média", "fraca"].map(n => { const f = F(n); return `<tr><td>${n[0].toUpperCase() + n.slice(1)}</td><td>${pct(f.pct_ate_100m_de_cidade_nova)}%</td><td>${pct(f.pct_virou_cidade)}%</td><td>${fmt(f.vezes_acaso)}×</td></tr>`; }).join("")}
+        </tbody></table>
+        <p>Teste no passado: o modelo, treinado só com o crescimento de 2006 a 2015, apontou onde a cidade cresceria de 2016 a 2021. ${pct(G.pct_cidade_nova_ate_100m_da_faixa)}% do que virou cidade nesses 6 anos ficou dentro do azul ou a até 100 m dele. O modelo acerta bem a região, não o lote: em 10 anos as taxas tendem a ser maiores.</p>
+      </details>
       <label class="chave" for="ck-proj"><input type="checkbox" id="ck-proj" ${est.cProj ? "checked" : ""}> Mostrar a tendência de crescimento</label>
       ${c3.html}
       <p class="nota">No ritmo atual, a cidade ganha cerca de ${fmt(Math.round(C.projecao.ha / 10) * 10)} ha em 10 anos; o azul cobre cerca de ${fmt(C.tendencia_ha)} ha para mostrar as regiões em que isso é mais provável, não os lotes exatos. Até 1990, ${fmt(ant.pct_em_susc_alta_muito_alta, 1)}% do que virou cidade estava em encosta de atenção; entre 2022 e 2026, ${fmt(ultimo.pct_em_susc_alta_muito_alta, 1)}%.</p>`,
