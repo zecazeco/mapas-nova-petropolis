@@ -41,7 +41,8 @@ body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--font-body);
   border-bottom: 1px solid var(--line); background: var(--panel); }
 .marca { font: 800 1.2rem/1.1 var(--font-display); letter-spacing: -0.01em; margin: 0; }
 .marca small { display: block; font: 400 0.78rem var(--font-body); color: var(--muted); letter-spacing: 0; margin-top: 0.15rem; }
-nav.menu { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+nav.menu { display: flex; flex-wrap: wrap; gap: 0.35rem; flex: 1; }
+nav.menu button.ajuda-btn { margin-left: auto; }
 nav.menu a { font: 600 0.95rem var(--font-display); text-decoration: none; color: var(--fg); padding: 0.45rem 0.85rem;
   border-radius: 999px; border: 1px solid var(--line); background: var(--bg); }
 .so-cel { display: none; }
@@ -362,7 +363,8 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
     style: {
       version: 8,
       sources: {
-        satelite: { type: "raster", tileSize: 256, maxzoom: 19,
+        // tileSize 512 com blocos de 256: pede ~1/4 dos blocos (metade da nitidez), mais leve
+        satelite: { type: "raster", tileSize: 512, maxzoom: 17,
           tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
           attribution: "Imagem: Esri, Maxar, Earthstar Geographics" },
         cinza: { type: "raster", tileSize: 256, maxzoom: 16,
