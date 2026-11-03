@@ -20,7 +20,7 @@
   --nivel1: #c81e1e; --nivel2: #f08c1e; --nivel3: #f2c94c;
   --agua: #2f8fd6; --noticia: #111814;
   --urb: #ffd84d; --novo: #ff5a1f; --proj: #33c6e0;
-  --mata: #1f7a3a; --perdeu: #f08c1e; --perdeu-risco: #c81e1e; --ganhou: #8fe07a; --voltou: #e9d27a;
+  --nativa: #1f7a3a; --silv: #e0b21a; --nativa-nova: #8fe07a; --silv-nova: #f6e48f; --cortado: #f08c1e; --cortado-risco: #c81e1e;
   --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
   --font-body: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
   color-scheme: light;
@@ -297,10 +297,11 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(im, 0, 0); cb(x.getImageData(0, 0, c.width, c.height), c, x); }; im.src = src; };
   const hex = h => { const v = parseInt(h.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; };
   let cresc = null, mata = null;
-  const est = { cAno: 2026, cProj: true, mAno: 2024, mVerMata: true };
+  const est = { cAno: 2026, cProj: true, mAno: 2025, mRisco: false };
   function iniciarCanvas() {
     ler(S.crescimento.img, (d, c, x) => { cresc = { d, c, x, o: x.createImageData(c.width, c.height) }; pintarCresc(); });
-    ler(S.desmatamento.img, (d, c, x) => { mata = { d, c, x, o: x.createImageData(c.width, c.height) }; pintarMata(); });
+    ler(S.desmatamento.imgs[0], d0 => ler(S.desmatamento.imgs[1], d1 => ler(S.desmatamento.imgs[2], (d2, c, x) => {
+      mata = { im: [d0.data, d1.data, d2.data], c, x, o: x.createImageData(c.width, c.height) }; pintarMata(); })));
   }
   function pintarCresc() {
     if (!cresc) return;
@@ -314,19 +315,23 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     cresc.x.putImageData(cresc.o, 0, 0);
     map.getSource("cresc").updateImage({ url: cresc.c.toDataURL(), coordinates: cantos(S.crescimento.limites) });
   }
-  // mata.png: R = ano do corte (Hansen, 1 = 2001); G = bits: 0 mata hoje, 1 encosta de atenção, 2 dentro, 3 mata nova
+  // mb_1..3.png: 2 bits por ano desde a base (0 nada, 1 mata nativa, 2 silvicultura), 4 anos por canal;
+  // mb_3 canal G = encosta de atenção
+  function estado(i, idx) { const k = Math.floor(idx / 12), c = Math.floor((idx % 12) / 4); return (mata.im[k][i + c] >> ((idx % 4) * 2)) & 3; }
   function pintarMata() {
     if (!mata) return;
-    const M = hex(css("--mata")), Pp = hex(css("--perdeu")), Pr = hex(css("--perdeu-risco")), G = hex(css("--ganhou")), V = hex(css("--voltou"));
-    const s = mata.d.data, o = mata.o.data, lim = est.mAno - 2000;
-    for (let i = 0; i < s.length; i += 4) {
-      const r = s[i], g = s[i + 1]; let cor = null, al = 230;
-      if (g & 4) {
-        if (r && r <= lim) cor = (g & 1) ? V : ((g & 2) ? Pr : Pp);
-        else if ((g & 8) && est.mVerMata) cor = G;
-        else if ((g & 1) && est.mVerMata) { cor = M; al = 110; }
-      }
-      if (cor) { o[i] = cor[0]; o[i + 1] = cor[1]; o[i + 2] = cor[2]; o[i + 3] = al; } else o[i + 3] = 0;
+    const N = hex(css("--nativa")), Sv = hex(css("--silv")), NN = hex(css("--nativa-nova")), SN = hex(css("--silv-nova")),
+      C = hex(css("--cortado")), CR = hex(css("--cortado-risco"));
+    const o = mata.o.data, risco = mata.im[2], a = est.mAno - S.desmatamento.base;
+    for (let i = 0; i < o.length; i += 4) {
+      const base = estado(i, 0), cur = estado(i, a); let cor = null;
+      if (cur) {
+        let perdeu = false;
+        if (base) for (let t = 1; t <= a && !perdeu; t++) perdeu = estado(i, t) === 0;
+        const original = base && !perdeu;
+        cor = original ? (cur === 1 ? N : Sv) : (cur === 1 ? NN : SN);
+      } else if (base) cor = (est.mRisco && risco[i + 1]) ? CR : C;
+      if (cor) { o[i] = cor[0]; o[i + 1] = cor[1]; o[i + 2] = cor[2]; o[i + 3] = 215; } else o[i + 3] = 0;
     }
     mata.x.putImageData(mata.o, 0, 0);
     map.getSource("mata").updateImage({ url: mata.c.toDataURL(), coordinates: cantos(S.desmatamento.limites) });
@@ -416,30 +421,36 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   };
   vistas.mata = () => {
     const M = S.desmatamento, porAno = {}; M.anos.forEach(a => { porAno[a.ano] = a; });
-    if (est.mAno > M.ano_max || est.mAno < M.ano_min) est.mAno = M.ano_max;
+    if (est.mAno > M.fim || est.mAno < M.base) est.mAno = M.fim;
     const aplicar = () => { const A = est.mAno, r = porAno[A];
       document.getElementById("m-slider").value = A; document.getElementById("m-ano").value = A;
-      document.getElementById("m-num").innerHTML = `<b>${fmt(r.cortada_ha)} ha</b><span>de mata cortados de 2001 até ${A}; ${fmt(r.cortada_risco_ha)} ha em encosta de atenção. Em ${fmt(r.cortada_voltou_2026_ha)} ha deles a mata já voltou (situação em 2026)</span>`;
+      document.getElementById("m-num").innerHTML = A === M.base
+        ? `<b>${fmt(r.nativa_ha + r.silvicultura_ha)} ha</b><span>de mata nativa e silvicultura em ${M.base}</span>`
+        : `<b>${fmt(r.cortado_ha)} ha</b><span>de mata cortados desde ${M.base} e ainda sem mata em ${A}${est.mRisco ? ` (${fmt(r.cortado_risco_ha)} ha em encosta de atenção)` : ""}; ${fmt(r.novo_nativa_ha + r.novo_silvicultura_ha)} ha de mata surgiram ou voltaram</span>`;
       pintarMata(); };
-    return { ids: ["mata"], html: `<h2>Onde a mata foi cortada desde 2001?</h2>
-      <p>Arraste a barra: os cortes vão se somando ano a ano. Vermelho é corte em encosta íngreme ou de atenção para deslizamento, onde ele mais preocupa.</p>
-      <div class="ano"><button type="button" id="m-play" aria-label="Ver ano a ano">▶</button><output id="m-ano">${M.ano_max}</output></div>
-      <input type="range" id="m-slider" min="${M.ano_min}" max="${M.ano_max}" step="1" value="${est.mAno}" aria-label="Ano">
-      <div class="escala"><span>${M.ano_min}</span><span>2008</span><span>2016</span><span>${M.ano_max}</span></div>
+    return { ids: ["mata"], html: `<h2>Como a mata mudou desde ${M.base}?</h2>
+      <p>Em ${M.base}, verde é mata nativa e amarelo é plantação de eucalipto, acácia ou pinus. Avance os anos: onde a mata foi cortada fica laranja, e onde ela surge ou volta aparece um tom mais claro.</p>
+      <div class="ano"><button type="button" id="m-play" aria-label="Ver ano a ano">▶</button><output id="m-ano">${M.fim}</output></div>
+      <input type="range" id="m-slider" min="${M.base}" max="${M.fim}" step="1" value="${est.mAno}" aria-label="Ano">
+      <div class="escala"><span>${M.base}</span><span>2009</span><span>2017</span><span>${M.fim}</span></div>
       <div class="numero" id="m-num"></div>
       <ul class="legenda">
-        <li><span class="sw" style="background:var(--perdeu-risco)"></span>Cortada, em encosta de atenção</li>
-        <li><span class="sw" style="background:var(--perdeu)"></span>Cortada, em outros terrenos</li>
-        <li><span class="sw" style="background:var(--voltou)"></span>Cortada, mas a mata já voltou</li>
-        <li><span class="sw" style="background:var(--ganhou)"></span>Mata nova desde 1986</li>
-        <li><span class="sw" style="background:var(--mata);opacity:.6"></span>Mata hoje</li>
+        <li><span class="sw" style="background:var(--nativa)"></span>Mata nativa</li>
+        <li><span class="sw" style="background:var(--silv)"></span>Plantação (silvicultura)</li>
+        <li><span class="sw" style="background:var(--cortado)"></span>Mata cortada</li>
+        <li id="m-leg-risco" ${est.mRisco ? "" : "hidden"}><span class="sw" style="background:var(--cortado-risco)"></span>Mata cortada em encosta de atenção</li>
+        <li><span class="sw" style="background:var(--nativa-nova)"></span>Mata nativa que surgiu ou voltou</li>
+        <li><span class="sw" style="background:var(--silv-nova)"></span>Plantação nova</li>
       </ul>
-      <label class="chave" for="ck-mata"><input type="checkbox" id="ck-mata" ${est.mVerMata ? "checked" : ""}> Mostrar a mata de hoje e a mata nova</label>
-      <p class="nota">No saldo, a mata do município cresceu: cerca de ${fmt(Math.round(M.mata_1986_ha / 100) * 100)} ha em 1986 e ${fmt(Math.round(M.mata_hoje_ha / 100) * 100)} ha hoje. Boa parte dos cortes é colheita de eucalipto e acácia seguida de replantio. Cortes: Hansen Global Forest Change (Universidade de Maryland), pixel de 30 m.</p>`,
+      <label class="chave" for="ck-risco-m"><input type="checkbox" id="ck-risco-m" ${est.mRisco ? "checked" : ""}> Destacar cortes em encosta de atenção</label>
+      <p class="nota">Fonte: MapBiomas Brasil, Coleção 11 (pixel de 30 m). Manchas muito pequenas podem ser erro de classificação.</p>`,
       depois: () => { aplicar();
         document.getElementById("m-slider").addEventListener("input", e => { est.mAno = +e.target.value; aplicar(); });
-        document.getElementById("ck-mata").addEventListener("change", e => { est.mVerMata = e.target.checked; pintarMata(); });
-        document.getElementById("m-play").addEventListener("click", e => animar(e.currentTarget, "mAno", M.ano_min, M.ano_max, aplicar)); },
+        // a camada de encostas não é desenhada aqui: as cores dela se confundiriam com as do corte;
+        // a caixinha só destaca em vermelho o corte que fica em encosta de atenção
+        document.getElementById("ck-risco-m").addEventListener("change", e => { est.mRisco = e.target.checked;
+          document.getElementById("m-leg-risco").hidden = !est.mRisco; aplicar(); });
+        document.getElementById("m-play").addEventListener("click", e => animar(e.currentTarget, "mAno", M.base, M.fim, aplicar)); },
       sair: parar };
   };
 

@@ -14,8 +14,8 @@ frágil.
    bueiros que podem entupir e deslizamentos noticiados.
 3. **Crescimento da cidade**: a área urbana ano a ano desde 1985 e as regiões com tendência
    de crescimento nos próximos 10 anos.
-4. **Mata**: onde a mata foi cortada desde 2001 e onde voltou, com destaque para cortes em
-   encostas íngremes.
+4. **Mata**: mata nativa e plantações ano a ano desde 2001, onde foram cortadas e onde a mata
+   voltou, com destaque para cortes em encostas íngremes.
 
 Cada mapa pode ser visto sobre imagem de satélite ou mapa simples, em 2D ou 3D.
 
@@ -26,7 +26,7 @@ Cada mapa pode ser visto sobre imagem de satélite ou mapa simples, em 2D ou 3D.
 - Inventários de deslizamentos de 2024: Serviço Geológico do Brasil (SGB), UFRGS e NASA
 - Setores de risco: SGB, via Defesa Civil de Nova Petrópolis
 - Construções: Google Open Buildings
-- Mata: classificação própria e Hansen Global Forest Change
+- Mata e plantações: MapBiomas Brasil (Coleção 11)
 - Geologia e solos: IBGE
 - Chuva: UFRGS e NASA POWER
 - Estradas e localidades: OpenStreetMap
