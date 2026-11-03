@@ -148,7 +148,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 </head>
 <body>
 <header class="topo">
-  <h1 class="marca">Mapas de Risco de Nova Petrópolis<small>Feito com imagens de satélite e um modelo de deslizamentos (versão 3, nov/2026)</small></h1>
+  <h1 class="marca">Mapas de Risco de Nova Petrópolis<small>Feito com imagens de satélite e um modelo de deslizamentos (versão 4, nov/2026)</small></h1>
   <nav class="menu" aria-label="Escolha o mapa">
     <a href="#encostas" data-v="encostas">Encostas</a>
     <a href="#rodovias" data-v="rodovias">Rodovias</a>
@@ -174,7 +174,7 @@ chuva forte.</p>
 <h2>Quanto os mapas acertam</h2>
 <blockquote>
 <p><strong>Resumo:</strong> as encostas pintadas no mapa ocupam <strong>16% do município</strong> e reuniram
-<strong>68% dos deslizamentos de 2024</strong>. Nas áreas de atenção <strong>muito alta</strong>, houve <strong>6,2 vezes
+<strong>73% dos deslizamentos de 2024</strong>. Nas áreas de atenção <strong>muito alta</strong>, houve <strong>7 vezes
 mais deslizamentos</strong> que na média do município.</p>
 </blockquote>
 <h3>Encostas: deslizamentos de 2024 em cada cor</h3>
@@ -191,20 +191,20 @@ mais deslizamentos</strong> que na média do município.</p>
 <tr>
 <td>🟥 Atenção muito alta</td>
 <td style="text-align: right;">5%</td>
-<td style="text-align: right;"><strong>39%</strong></td>
-<td style="text-align: right;"><strong>6,2×</strong></td>
+<td style="text-align: right;"><strong>48%</strong></td>
+<td style="text-align: right;"><strong>7,0×</strong></td>
 </tr>
 <tr>
 <td>🟧 Atenção alta</td>
-<td style="text-align: right;">11%</td>
-<td style="text-align: right;"><strong>29%</strong></td>
+<td style="text-align: right;">10%</td>
+<td style="text-align: right;"><strong>25%</strong></td>
 <td style="text-align: right;"><strong>2,4×</strong></td>
 </tr>
 <tr>
 <td>Sem cor (média e baixa)</td>
 <td style="text-align: right;">84%</td>
-<td style="text-align: right;">32%</td>
-<td style="text-align: right;">0,5×</td>
+<td style="text-align: right;">27%</td>
+<td style="text-align: right;">0,4×</td>
 </tr>
 </tbody>
 </table></div>
@@ -213,14 +213,14 @@ mais deslizamentos</strong> que na média do município.</p>
   Cada parte do município foi avaliada por um modelo que <strong>não tinha visto</strong> os
   deslizamentos daquela parte, para medir o acerto em lugares "novos" e não só repetir o
   que o modelo decorou.</li>
-<li>Em outro inventário independente (pontos da NASA), 67% dos deslizamentos caíram nas
+<li>Em outro inventário independente (pontos da NASA), 79% dos deslizamentos caíram nas
   áreas coloridas.</li>
-<li>Os 15 pontos de deslizamento conhecidos de moradores ficaram todos em áreas de atenção
-  alta ou muito alta (14 em muito alta), e 9 de 13 quedas de barreira noticiadas nas
+<li>Dos 15 pontos de deslizamento conhecidos de moradores, 14 ficaram em áreas de atenção
+  alta ou muito alta (13 em muito alta), e 9 de 13 quedas de barreira noticiadas nas
   rodovias também.</li>
 <li><strong>Como ler:</strong> a cor diz onde é <em>mais provável</em>, não que vai deslizar. Mesmo em atenção
-  muito alta, só cerca de 3% do terreno deslizou em 2024, uma das chuvas mais fortes já
-  registradas. E um terço dos deslizamentos aconteceu em áreas sem cor: <strong>área sem cor
+  muito alta, só cerca de 3,4% do terreno deslizou em 2024, uma das chuvas mais fortes já
+  registradas. E cerca de um quarto dos deslizamentos aconteceu em áreas sem cor: <strong>área sem cor
   não é área sem risco</strong>.</li>
 </ul>
 <h3>Crescimento da cidade: a tendência acerta?</h3>
@@ -239,26 +239,26 @@ fato aconteceu.</p>
 <tbody>
 <tr>
 <td>Forte</td>
-<td style="text-align: right;"><strong>71%</strong></td>
-<td style="text-align: right;">9,6%</td>
-<td style="text-align: right;"><strong>19×</strong></td>
+<td style="text-align: right;"><strong>69%</strong></td>
+<td style="text-align: right;">9,2%</td>
+<td style="text-align: right;"><strong>18×</strong></td>
 </tr>
 <tr>
 <td>Média</td>
 <td style="text-align: right;">57%</td>
-<td style="text-align: right;">5,3%</td>
+<td style="text-align: right;">5,7%</td>
 <td style="text-align: right;">11×</td>
 </tr>
 <tr>
 <td>Fraca</td>
-<td style="text-align: right;">52%</td>
-<td style="text-align: right;">4,1%</td>
+<td style="text-align: right;">53%</td>
+<td style="text-align: right;">4,2%</td>
 <td style="text-align: right;">8×</td>
 </tr>
 </tbody>
 </table></div>
 <ul>
-<li><strong>61%</strong> de tudo o que virou cidade de 2016 a 2021 ficou dentro do azul ou a até 100 m dele.</li>
+<li><strong>60%</strong> de tudo o que virou cidade de 2016 a 2021 ficou dentro do azul ou a até 100 m dele.</li>
 <li><strong>Como ler:</strong> o mapa acerta bem a <em>região</em> para onde a cidade vai, não o <em>lote</em>. O teste
   cobriu 6 anos; em 10 anos, como no mapa, as taxas tendem a ser maiores.</li>
 </ul>
@@ -268,17 +268,18 @@ fato aconteceu.</p>
    risco oficiais do Serviço Geológico do Brasil e sinais de alerta no terreno. O modelo
    olha o relevo (declive, forma da encosta, caminho da água), a cobertura do solo e o
    histórico de corte da mata, e aprendeu com os deslizamentos de 2024 de toda a região da Serra,
-   não só do município.</li>
+   não só do município. Desde a versão 4 (nov/2026), usa também um resumo do que os
+   satélites viam de cada lugar em 2023, antes do desastre.</li>
 <li><strong>Rodovias</strong>: trechos da BR-116 e da RS-235 mais sujeitos a queda de barreira, com a
    quilometragem das placas, pontes e bueiros que podem entupir e deslizamentos
-   noticiados de 2016 a 2026. Cerca de 59% da BR-116 no município passa por encostas de
+   noticiados de 2016 a 2026. Cerca de 60% da BR-116 no município passa por encostas de
    atenção alta ou muito alta.</li>
 <li><strong>Crescimento da cidade</strong>: a área urbana ano a ano desde 1985 e as regiões com tendência
    de crescimento nos próximos 10 anos (cerca de 210 ha no ritmo atual). Mostra também
    quanto do crescimento recente avançou sobre encostas de atenção.</li>
 <li><strong>Mata</strong>: mata nativa e plantações ano a ano desde 2001, onde foram cortadas e onde a mata
    voltou, com destaque para cortes em encostas de atenção. De 2001 a 2025, cerca de
-   1.850 ha de mata ou plantação foram cortados e não voltaram (230 ha em encostas de
+   1.850 ha de mata ou plantação foram cortados e não voltaram (240 ha em encostas de
    atenção), e cerca de 2.700 ha de mata surgiram ou voltaram.</li>
 </ol>
 <p>Cada mapa pode ser visto sobre imagem de satélite ou mapa simples, em 2D ou 3D, e cada
@@ -286,6 +287,7 @@ painel traz os números de acerto ao lado da legenda.</p>
 <h2>Fontes</h2>
 <ul>
 <li>Imagens de satélite: Sentinel-2 (ESA/Copernicus) e Landsat (NASA/USGS)</li>
+<li>Resumo das imagens de satélite de 2023: Satellite Embeddings (Google DeepMind, via Google Earth Engine)</li>
 <li>Relevo: Copernicus DEM, FABDEM e Terrain Tiles (AWS)</li>
 <li>Inventários de deslizamentos de 2024: Serviço Geológico do Brasil (SGB), UFRGS e NASA</li>
 <li>Setores de risco: SGB, via Defesa Civil de Nova Petrópolis</li>
@@ -439,7 +441,17 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
     return new maplibregl.Marker({ element: el }).setLngLat(lngLat);
   }
 
-  map.on("load", () => {
+  // monta camadas e painel quando o estilo estiver pronto, sem esperar as imagens de fundo:
+  // se a Esri estiver bloqueada (rede de empresa, por exemplo), o "load" pode nunca vir
+  let iniciado = false;
+  const estiloPronto = () => map.isStyleLoaded() || !!(map.style && map.style._loaded);
+  const tentarIniciar = () => { if (!iniciado && estiloPronto()) iniciar(); };
+  map.on("load", tentarIniciar);
+  map.on("styledata", tentarIniciar);
+  map.on("idle", tentarIniciar);
+  [1500, 4000, 8000].forEach(t => setTimeout(tentarIniciar, t));
+  function iniciar() {
+    iniciado = true;
     // marcador de posição: tudo o que é nosso fica acima dele, e o mapa simples abaixo
     map.addLayer({ id: "camadas-inicio", type: "background", paint: { "background-opacity": 0 } });
     map.addSource("limite", { type: "geojson", data: S.limite });
@@ -480,7 +492,7 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
     iniciarCanvas();
     window.addEventListener("hashchange", () => mostrar(location.hash.slice(1)));
     mostrar(location.hash.slice(1) || "encostas");
-  });
+  }
 
   const ver = (id, sim) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", sim ? "visible" : "none");
   function chave(id, texto, ligado, ids) {
