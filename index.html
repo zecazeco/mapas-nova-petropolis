@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mapas de Risco de Nova Petrópolis</title>
+<meta name="description" content="Encostas e rodovias com risco de deslizamento, crescimento da cidade e mata em Nova Petrópolis (RS), a partir de imagens de satélite.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<link rel="stylesheet" href="lib/maplibre-gl.css">
+<style>
+/* Layout: barra com o menu dos 4 mapas; abaixo, painel de leitura à esquerda e mapa à direita
+   (no celular, mapa em cima e painel embaixo). Uma pergunta por mapa, legenda curta. */
+:root {
+  --bg: #eef1ec; --panel: #fbfcf9; --fg: #1d2620; --muted: #5d6a61; --line: #d3dbd3;
+  --accent: #1e5b45; --accent-fg: #ffffff;
+  --risco-alto: #f08c1e; --risco-muito: #c81e1e;
+  --sgb: #2f6fd6; --sem-setor: #7a2fb5;
+  --nivel1: #c81e1e; --nivel2: #f08c1e; --nivel3: #f2c94c;
+  --agua: #2f8fd6; --noticia: #111814;
+  --urb: #ffd84d; --novo: #ff5a1f; --proj: #33c6e0;
+  --mata: #1f7a3a; --perdeu: #f08c1e; --perdeu-risco: #c81e1e; --ganhou: #8fe07a; --voltou: #e9d27a;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131915; --panel: #1b231e; --fg: #e8eee9; --muted: #9eaba2; --line: #2e3a32;
+    --accent: #6fc6a0; --accent-fg: #0f1612; --sgb: #6ea2ff; --sem-setor: #c58cf0; --noticia: #f4f7f4;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--font-body); display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top, 0px); }
+.topo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.5rem; padding-block: 0.7rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  border-bottom: 1px solid var(--line); background: var(--panel); }
+.marca { font: 800 1.2rem/1.1 var(--font-display); letter-spacing: -0.01em; margin: 0; }
+.marca small { display: block; font: 400 0.78rem var(--font-body); color: var(--muted); letter-spacing: 0; margin-top: 0.15rem; }
+nav.menu { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+nav.menu a { font: 600 0.95rem var(--font-display); text-decoration: none; color: var(--fg); padding: 0.45rem 0.85rem;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--bg); }
+nav.menu a[aria-current="page"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.corpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(300px, 380px) 1fr; }
+.painel { overflow-y: auto; border-right: 1px solid var(--line); background: var(--panel); padding-block: 1.1rem 1.5rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: 16px; min-width: 0; }
+.palco { position: relative; min-height: 0; }
+#mapa { position: absolute; inset: 0; background: #2a332d; }
+.painel h2 { font: 800 1.45rem/1.15 var(--font-display); margin: 0 0 0.4rem; text-wrap: balance; }
+.painel p { margin: 0 0 0.9rem; max-width: 60ch; }
+.painel .nota { font-size: 0.85rem; color: var(--muted); }
+.numero { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.2rem 0.5rem; margin: 0.4rem 0 1rem; }
+.numero b { font: 800 2.1rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.numero span { color: var(--muted); font-size: 0.92rem; }
+.legenda { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.45rem; }
+.legenda li { display: flex; align-items: center; gap: 0.6rem; font-size: 0.95rem; }
+.sw { flex: none; width: 1.3rem; height: 1.3rem; border-radius: 4px; border: 1px solid rgba(0,0,0,0.15); }
+.sw.ponto { border-radius: 50%; width: 0.95rem; height: 0.95rem; margin: 0 0.175rem; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
+.sw.linha { height: 0.4rem; border-radius: 2px; border: 0; }
+.sw.contorno { background: transparent !important; border: 2.5px dashed var(--sgb); }
+.sw.grad { width: 3.2rem; background: linear-gradient(90deg, rgba(51, 198, 224, 0.2), var(--proj)); }
+.sinais { margin: 0 0 1rem; padding-left: 1.2rem; display: grid; gap: 0.25rem; font-size: 0.93rem; }
+.sw.anel { border-radius: 50%; background: transparent !important; border: 3px solid var(--sem-setor); }
+.sw.losango { width: 0.8rem; height: 0.8rem; transform: rotate(45deg); margin: 0 0.25rem; background: var(--noticia); border: 2px solid var(--panel); }
+.chave { display: flex; align-items: center; gap: 0.55rem; padding: 0.55rem 0; border-top: 1px solid var(--line); cursor: pointer; font-size: 0.95rem; }
+.chave input { width: 1.15rem; height: 1.15rem; accent-color: var(--accent); flex: none; }
+.busca { display: grid; gap: 0.3rem; margin: 0 0 1.1rem; }
+.busca label { font-size: 0.82rem; color: var(--muted); letter-spacing: 0.02em; }
+.busca input { font: inherit; padding: 0.55rem 0.7rem; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); min-width: 0; }
+.lista { list-style: none; padding: 0; margin: 0.3rem 0 1rem; display: grid; gap: 0.3rem; }
+.lista button { width: 100%; text-align: left; font: inherit; font-size: 0.92rem; color: var(--fg); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 0.5rem 0.65rem; cursor: pointer; display: grid; grid-template-columns: auto 1fr; gap: 0 0.6rem; align-items: center; }
+.lista button small { grid-column: 2; color: var(--muted); font-size: 0.8rem; }
+.lista .tag { grid-row: span 2; width: 0.8rem; height: 2.2rem; border-radius: 3px; }
+h3 { font: 600 1rem var(--font-display); margin: 1.1rem 0 0.3rem; }
+.ano { display: flex; align-items: center; gap: 0.7rem; margin: 0.2rem 0 0.4rem; }
+.ano output { font: 800 2.3rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.ano button { font: 700 1rem var(--font-body); width: 2.6rem; height: 2.6rem; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-fg); cursor: pointer; flex: none; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.escala { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; margin-bottom: 0.8rem; }
+/* botões sobre o mapa */
+.alternador { position: absolute; z-index: 5; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 6px; }
+.seg { display: flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.25); }
+.seg button { font: 700 0.85rem var(--font-body); border: 0; background: transparent; color: var(--fg); padding: 0.35rem 0.8rem; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.rotulo { color: #fff; font: 700 12px/1.1 var(--font-body); text-shadow: 0 0 3px #000, 0 0 2px #000; white-space: nowrap; pointer-events: none; }
+.rotulo.n0 { font-size: 15px; } .rotulo.n1 { font-size: 13px; }
+.rotulo-casa { background: var(--sem-setor); color: #fff; font: 700 12px/1 var(--font-body); border-radius: 999px; padding: 4px 7px; border: 2px solid #fff; white-space: nowrap; cursor: pointer; }
+.maplibregl-popup-content { background: var(--panel); color: var(--fg); font: 14px/1.45 var(--font-body); border-radius: 8px; padding: 12px 28px 12px 14px; max-width: 18rem; }
+.maplibregl-popup-tip { border-top-color: var(--panel) !important; border-bottom-color: var(--panel) !important; }
+.maplibregl-popup-close-button { font-size: 20px; color: var(--muted); width: 28px; height: 28px; }
+.pop-t { font: 700 1.05rem var(--font-display); display: block; margin-bottom: 0.2rem; }
+.pop-d { color: var(--muted); font-size: 0.8rem; }
+.maplibregl-popup-content a { color: var(--accent); }
+@media (max-width: 760px) {
+  .corpo { grid-template-columns: 1fr; grid-template-rows: 58vh auto; overflow-y: auto; }
+  .palco { grid-row: 1; height: 58vh; }
+  .painel { grid-row: 2; border-right: 0; border-top: 1px solid var(--line); overflow: visible; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  nav.menu a { padding: 0.4rem 0.7rem; font-size: 0.9rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="topo">
+  <h1 class="marca">Mapas de Risco de Nova Petrópolis<small>Feito com imagens de satélite e um modelo de deslizamentos (versão 3, nov/2026)</small></h1>
+  <nav class="menu" aria-label="Escolha o mapa">
+    <a href="#encostas" data-v="encostas">Encostas</a>
+    <a href="#rodovias" data-v="rodovias">Rodovias</a>
+    <a href="#crescimento" data-v="crescimento">Crescimento da cidade</a>
+    <a href="#mata" data-v="mata">Mata</a>
+  </nav>
+</header>
+<div class="corpo">
+  <aside class="painel" id="painel" aria-live="polite"></aside>
+  <div class="palco">
+    <div id="mapa" role="region" aria-label="Mapa"></div>
+    <div class="alternador">
+      <div class="seg" role="group" aria-label="Fundo do mapa">
+        <button type="button" data-fundo="satelite" aria-pressed="true">Satélite</button>
+        <button type="button" data-fundo="mapa" aria-pressed="false">Mapa</button>
+      </div>
+      <div class="seg" role="group" aria-label="Visão">
+        <button type="button" data-vis="2d" aria-pressed="true">2D</button>
+        <button type="button" data-vis="3d" aria-pressed="false">3D</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="lib/maplibre-gl.js"></script>
+<script src="dados.js"></script>
+<script>
+(function () {
+  const S = window.SITE;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const fmt = (v, d = 0) => Number(v).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const painel = document.getElementById("painel");
+  const VAZIO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+  // limites [[sul, oeste], [norte, leste]] -> cantos para a fonte de imagem
+  const cantos = l => [[l[0][1], l[1][0]], [l[1][1], l[1][0]], [l[1][1], l[0][0]], [l[0][1], l[0][0]]];
+  const caixa = (() => { const c = S.limite.features[0].geometry.coordinates.flat(3); const xs = [], ys = [];
+    for (let i = 0; i < c.length; i += 2) { xs.push(c[i]); ys.push(c[i + 1]); }
+    return [[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]]; })();
+
+  const map = new maplibregl.Map({
+    container: "mapa", bounds: caixa, fitBoundsOptions: { padding: 20 }, maxPitch: 60, minZoom: 10, maxZoom: 18.5,
+    attributionControl: false, fadeDuration: 0,
+    style: {
+      version: 8,
+      sources: {
+        satelite: { type: "raster", tileSize: 256, maxzoom: 19,
+          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+          attribution: "Imagem: Esri, Maxar, Earthstar Geographics" },
+        cinza: { type: "raster", tileSize: 256, maxzoom: 16,
+          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"],
+          attribution: "Mapa: Esri" },
+        relevo: { type: "raster-dem", encoding: "terrarium", tileSize: 256, maxzoom: 12,
+          tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+          attribution: "Relevo: Mapzen/AWS Terrain Tiles" },
+        sentinel: { type: "image", url: S.fundo.img, coordinates: cantos(S.fundo.limites) }
+      },
+      layers: [
+        { id: "fundo-sentinel", type: "raster", source: "sentinel" },
+        { id: "fundo-satelite", type: "raster", source: "satelite" },
+        { id: "fundo-cinza", type: "raster", source: "cinza", layout: { visibility: "none" } }
+      ]
+    }
+  });
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+  map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
+  map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+
+  // ---- uma janela de informação por vez; fecha ao tocar em outro lugar ou trocar de mapa ----
+  let janela = null;
+  function popup(lngLat, html) {
+    if (janela) janela.remove();
+    janela = new maplibregl.Popup({ maxWidth: "19rem", closeOnClick: false }).setLngLat(lngLat).setHTML(html).addTo(map);
+  }
+  const fecharJanela = () => { if (janela) { janela.remove(); janela = null; } };
+  const clicaveis = [];
+  map.on("click", e => {
+    const alvo = map.queryRenderedFeatures(e.point, { layers: clicaveis.filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none") });
+    if (!alvo.length) fecharJanela();
+  });
+  function clicavel(id, f) {
+    clicaveis.push(id);
+    map.on("click", id, e => f(e.features[0], e.lngLat));
+    map.on("mouseenter", id, () => { map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", id, () => { map.getCanvas().style.cursor = ""; });
+  }
+
+  // ---- mapa simples: OpenFreeMap sem nomes (sem chave); se falhar, fundo cinza da Esri ----
+  let idsMapa = null;
+  async function carregarMapaSimples() {
+    if (idsMapa) return idsMapa;
+    try {
+      const r = await fetch("https://tiles.openfreemap.org/styles/liberty");
+      const st = await r.json();
+      Object.entries(st.sources).forEach(([k, v]) => { if (!map.getSource("ofm-" + k)) map.addSource("ofm-" + k, v); });
+      idsMapa = [];
+      st.layers.filter(l => l.type !== "symbol" && !(l.paint && (l.paint["fill-pattern"] || l.paint["line-pattern"])))
+        .forEach(l => { const c = JSON.parse(JSON.stringify(l)); c.id = "ofm-" + l.id; if (c.source) c.source = "ofm-" + c.source;
+          c.layout = Object.assign({}, c.layout, { visibility: "none" }); map.addLayer(c, "camadas-inicio"); idsMapa.push(c.id); });
+    } catch (e) { idsMapa = ["fundo-cinza"]; }
+    return idsMapa;
+  }
+  document.querySelectorAll("[data-fundo]").forEach(b => b.addEventListener("click", async () => {
+    const sat = b.dataset.fundo === "satelite";
+    document.querySelectorAll("[data-fundo]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    const ids = await carregarMapaSimples();
+    ["fundo-satelite", "fundo-sentinel"].forEach(i => map.setLayoutProperty(i, "visibility", sat ? "visible" : "none"));
+    ids.forEach(i => map.setLayoutProperty(i, "visibility", sat ? "none" : "visible"));
+  }));
+  // ---- 3D: relevo de 30 m (zoom 12) e sem sombreamento extra, para ficar leve ----
+  document.querySelectorAll("[data-vis]").forEach(b => b.addEventListener("click", () => {
+    const tres = b.dataset.vis === "3d";
+    document.querySelectorAll("[data-vis]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    map.setTerrain(tres ? { source: "relevo", exaggeration: 1.4 } : null);
+    map.easeTo({ pitch: tres ? 55 : 0, bearing: tres ? -20 : 0, duration: 800 });
+  }));
+
+  function pontos(lista) {
+    return { type: "FeatureCollection", features: lista.map(p => ({ type: "Feature", properties: p, geometry: { type: "Point", coordinates: [p.lon, p.lat] } })) };
+  }
+  function marcadorHTML(lngLat, html, cls) {
+    const el = document.createElement("div"); el.className = cls; el.textContent = html;
+    return new maplibregl.Marker({ element: el }).setLngLat(lngLat);
+  }
+
+  map.on("load", () => {
+    // marcador de posição: tudo o que é nosso fica acima dele, e o mapa simples abaixo
+    map.addLayer({ id: "camadas-inicio", type: "background", paint: { "background-opacity": 0 } });
+    map.addSource("limite", { type: "geojson", data: S.limite });
+    map.addSource("risco", { type: "image", url: S.risco.img, coordinates: cantos(S.risco.limites) });
+    map.addSource("cresc", { type: "image", url: VAZIO, coordinates: cantos(S.crescimento.limites) });
+    map.addSource("mata", { type: "image", url: VAZIO, coordinates: cantos(S.desmatamento.limites) });
+    map.addSource("setores", { type: "geojson", data: S.setores });
+    map.addSource("rodovias", { type: "geojson", data: S.rodovias });
+    map.addSource("trechos", { type: "geojson", data: { type: "FeatureCollection", features: S.trechos.features.filter(f => f.properties.nivel <= 3) } });
+    map.addSource("noticias", { type: "geojson", data: pontos(S.noticias) });
+    map.addSource("travessias", { type: "geojson", data: pontos(S.travessias) });
+
+    const ras = (id, src, op = 0.85) => map.addLayer({ id, type: "raster", source: src, layout: { visibility: "none" }, paint: { "raster-opacity": op, "raster-resampling": "nearest", "raster-fade-duration": 0 } });
+    ras("risco", "risco"); ras("cresc", "cresc", 0.92); ras("mata", "mata", 0.9);
+    map.addLayer({ id: "setores-f", type: "fill", source: "setores", layout: { visibility: "none" }, paint: { "fill-color": css("--sgb"), "fill-opacity": 0.12 } });
+    map.addLayer({ id: "setores-l", type: "line", source: "setores", layout: { visibility: "none" }, paint: { "line-color": css("--sgb"), "line-width": 2.5, "line-dasharray": [2, 1.5] } });
+    map.addLayer({ id: "rodovias", type: "line", source: "rodovias", layout: { visibility: "none", "line-cap": "round" }, paint: { "line-color": "#ffffff", "line-width": 6, "line-opacity": 0.9 } });
+    map.addLayer({ id: "trechos", type: "line", source: "trechos", layout: { visibility: "none" }, paint: {
+      "line-color": ["match", ["get", "nivel"], 1, css("--nivel1"), 2, css("--nivel2"), css("--nivel3")],
+      "line-width": ["match", ["get", "nivel"], 1, 9, 7] } });
+    map.addLayer({ id: "travessias", type: "circle", source: "travessias", layout: { visibility: "none" }, paint: { "circle-radius": 7, "circle-color": css("--agua"), "circle-stroke-color": "#fff", "circle-stroke-width": 2.5 } });
+    map.addLayer({ id: "noticias", type: "circle", source: "noticias", layout: { visibility: "none" }, paint: { "circle-radius": 6, "circle-color": css("--noticia"), "circle-stroke-color": "#fff", "circle-stroke-width": 2 } });
+    map.addLayer({ id: "limite", type: "line", source: "limite", paint: { "line-color": "#ffffff", "line-width": 2.5, "line-dasharray": [3, 2] } });
+
+    // nomes das localidades (marcadores HTML, sem fontes externas)
+    const rotulos = S.localidades.map(l => ({ l, m: marcadorHTML([l.lon, l.lat], l.nome, `rotulo n${l.nivel}`) }));
+    const atualizarRotulos = () => { const z = map.getZoom();
+      rotulos.forEach(({ l, m }) => { const ver = l.nivel <= 1 || (l.nivel <= 2 && z >= 13) || z >= 14;
+        if (ver && !m._map) m.addTo(map); else if (!ver && m._map) m.remove(); }); };
+    map.on("zoomend", atualizarRotulos); atualizarRotulos();
+
+    clicavel("setores-f", (f, ll) => { const p = f.properties; popup(ll, `<span class="pop-t">Setor de risco do SGB</span>${p.nome}<br>Risco ${String(p.grau).toLowerCase()} · ${p.tipo}<br><span class="pop-d">Mapeamento oficial do Serviço Geológico do Brasil</span>`); });
+    const nomeNivel = { 1: "Prioridade máxima", 2: "Prioridade alta", 3: "Prioridade média" };
+    clicavel("trechos", (f, ll) => { const p = f.properties; popup(ll, `<span class="pop-t">${p.rodovia}, km ${fmt(p.km_oficial_inicio, 1)} a ${fmt(p.km_oficial_fim, 1)}</span>${nomeNivel[p.nivel]} · ${fmt(p.extensao_m)} m<br>${p.processo === "encosta" ? "Encosta instável junto à pista" : "Fundo de vale, sujeito a erosão e enxurrada"}${p.cicatriz_2024_ate_100m ? "<br>Teve deslizamento a até 100 m em 2024." : ""}`); });
+    clicavel("noticias", (f, ll) => { const n = f.properties; popup(ll, `<span class="pop-t">${n.rodovia} km ${fmt(n.km, 1)} · ${n.data}</span>${n.descricao}<br><span class="pop-d">${n.fonte}</span>${n.url ? `<br><a href="${n.url}" target="_blank" rel="noopener">abrir a notícia</a>` : ""}`); });
+    clicavel("travessias", (f, ll) => { const t = f.properties; popup(ll, `<span class="pop-t">Ponte ou bueiro: ${t.rodovia}${t.km && t.km !== "null" ? " km " + fmt(t.km, 1) : ""}</span>Recebe a água de ${fmt(t.bacia_ha)} ha${t.cicatrizes_ha > 0.5 ? `, com ${fmt(t.cicatrizes_ha, 1)} ha de deslizamentos de 2024 acima` : ""}. Pode entupir com terra e galhos em chuva forte.`); });
+
+    iniciarCanvas();
+    window.addEventListener("hashchange", () => mostrar(location.hash.slice(1)));
+    mostrar(location.hash.slice(1) || "encostas");
+  });
+
+  const ver = (id, sim) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", sim ? "visible" : "none");
+  function chave(id, texto, ligado, ids) {
+    return { html: `<label class="chave" for="${id}"><input type="checkbox" id="${id}" ${ligado ? "checked" : ""}> ${texto}</label>`,
+      ligar: () => { const el = document.getElementById(id); const f = () => ids.forEach(i => ver(i, el.checked)); el.addEventListener("change", f); f(); } };
+  }
+  function buscaHTML(id) {
+    return `<div class="busca"><label for="${id}">Ir para uma localidade</label>
+      <input id="${id}" list="${id}-l" placeholder="ex.: Linha Imperial" autocomplete="off">
+      <datalist id="${id}-l">${S.localidades.map(l => `<option value="${l.nome}">`).join("")}</datalist></div>`;
+  }
+  function ligarBusca(id) {
+    const el = document.getElementById(id);
+    el.addEventListener("change", () => { const l = S.localidades.find(x => x.nome.toLowerCase() === el.value.trim().toLowerCase());
+      if (l) map.flyTo({ center: [l.lon, l.lat], zoom: 15.5 }); });
+  }
+
+  // ---- canvas: crescimento e mata (as imagens guardam códigos; a página pinta o ano escolhido) ----
+  const ler = (src, cb) => { const im = new Image(); im.onload = () => { const c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(im, 0, 0); cb(x.getImageData(0, 0, c.width, c.height), c, x); }; im.src = src; };
+  const hex = h => { const v = parseInt(h.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; };
+  let cresc = null, mata = null;
+  const est = { cAno: 2026, cProj: true, mAno: 2024, mVerMata: true };
+  function iniciarCanvas() {
+    ler(S.crescimento.img, (d, c, x) => { cresc = { d, c, x, o: x.createImageData(c.width, c.height) }; pintarCresc(); });
+    ler(S.desmatamento.img, (d, c, x) => { mata = { d, c, x, o: x.createImageData(c.width, c.height) }; pintarMata(); });
+  }
+  function pintarCresc() {
+    if (!cresc) return;
+    const U = hex(css("--urb")), N = hex(css("--novo")), P = hex(css("--proj")), s = cresc.d.data, o = cresc.o.data, A = est.cAno;
+    for (let i = 0; i < s.length; i += 4) {
+      const c = s[i], a = c === 255 ? 2022 : (c ? c + 1984 : 0); let cor = null, al = 235;
+      if (a && a <= A) cor = (c !== 255 && A - a < 3 && a > 1985) ? N : U;
+      else if (est.cProj && A === 2026 && s[i + 1] > 0) { cor = P; al = 50 + Math.round(s[i + 1] * 0.75); }
+      if (cor) { o[i] = cor[0]; o[i + 1] = cor[1]; o[i + 2] = cor[2]; o[i + 3] = al; } else o[i + 3] = 0;
+    }
+    cresc.x.putImageData(cresc.o, 0, 0);
+    map.getSource("cresc").updateImage({ url: cresc.c.toDataURL(), coordinates: cantos(S.crescimento.limites) });
+  }
+  // mata.png: R = ano do corte (Hansen, 1 = 2001); G = bits: 0 mata hoje, 1 encosta de atenção, 2 dentro, 3 mata nova
+  function pintarMata() {
+    if (!mata) return;
+    const M = hex(css("--mata")), Pp = hex(css("--perdeu")), Pr = hex(css("--perdeu-risco")), G = hex(css("--ganhou")), V = hex(css("--voltou"));
+    const s = mata.d.data, o = mata.o.data, lim = est.mAno - 2000;
+    for (let i = 0; i < s.length; i += 4) {
+      const r = s[i], g = s[i + 1]; let cor = null, al = 230;
+      if (g & 4) {
+        if (r && r <= lim) cor = (g & 1) ? V : ((g & 2) ? Pr : Pp);
+        else if ((g & 8) && est.mVerMata) cor = G;
+        else if ((g & 1) && est.mVerMata) { cor = M; al = 110; }
+      }
+      if (cor) { o[i] = cor[0]; o[i + 1] = cor[1]; o[i + 2] = cor[2]; o[i + 3] = al; } else o[i + 3] = 0;
+    }
+    mata.x.putImageData(mata.o, 0, 0);
+    map.getSource("mata").updateImage({ url: mata.c.toDataURL(), coordinates: cantos(S.desmatamento.limites) });
+  }
+
+  // ---- vistas ----
+  const vistas = {};
+  const totalCasas = S.casas_resumo.reduce((s, r) => s + r.edificacoes, 0);
+  vistas.encostas = () => {
+    const c1 = chave("ck-setores", "Setores de risco oficiais (SGB)", true, ["setores-f", "setores-l"]);
+    return { ids: ["risco"], html: `<h2>Onde o terreno pode deslizar?</h2>
+      <p>As cores mostram as encostas que merecem mais atenção em chuvas fortes, segundo um modelo feito com imagens de satélite e os deslizamentos de 2024.</p>
+      ${buscaHTML("b-enc")}
+      <ul class="legenda">
+        <li><span class="sw" style="background:var(--risco-muito)"></span>Atenção muito alta</li>
+        <li><span class="sw" style="background:var(--risco-alto)"></span>Atenção alta</li>
+        <li><span class="sw contorno"></span>Setor de risco oficial (Serviço Geológico do Brasil)</li>
+      </ul>
+      ${c1.html}
+      <h3>Sinais de que o terreno está se mexendo</h3>
+      <ul class="sinais"><li>Trincas novas no chão ou nas paredes</li><li>Árvores, postes ou muros inclinando</li><li>Portas e janelas emperrando</li><li>Água minando na encosta ou barro na água</li></ul>
+      <p>Se notar algum desses sinais, ou se mora numa área colorida e tem dúvida, procure a Defesa Civil: <b>199</b>.</p>
+      <p class="nota">Cerca de ${fmt(S.casas_em_atencao / totalCasas * 100, 0)}% das construções do município ficam em áreas de atenção alta ou muito alta. Áreas sem cor não são áreas sem risco. Este mapa é uma estimativa e não substitui o mapeamento oficial nem a vistoria técnica.</p>`,
+      depois: () => { ligarBusca("b-enc"); c1.ligar(); } };
+  };
+  vistas.rodovias = () => {
+    const c1 = chave("ck-not", "Deslizamentos noticiados (2016 a 2026)", true, ["noticias"]);
+    const c2 = chave("ck-trav", "Pontes e bueiros que podem entupir", true, ["travessias"]);
+    const c3 = chave("ck-risco-r", "Mostrar as encostas de atenção em volta", false, ["risco"]);
+    const top = S.trechos.features.filter(f => f.properties.nivel <= 2).sort((a, b) => a.properties.nivel - b.properties.nivel || b.properties.extensao_m - a.properties.extensao_m);
+    const br = S.rodovias_resumo.find(r => r.rodovia === "BR-116"), rs = S.rodovias_resumo.find(r => r.rodovia === "RS-235");
+    const cor = n => css(n === 1 ? "--nivel1" : "--nivel2"), nome = { 1: "Prioridade máxima", 2: "Prioridade alta" };
+    return { ids: ["rodovias", "trechos"], html: `<h2>Quais trechos das rodovias podem ter queda de barreira?</h2>
+      <p>Trechos da BR-116 e da RS-235 dentro do município, com a quilometragem das placas. Toque num trecho para ver o motivo.</p>
+      <div class="numero"><b>${fmt(br.pct_alta + br.pct_muito_alta)}%</b><span>da BR-116 passa por encostas de atenção alta ou muito alta (RS-235: ${fmt(rs.pct_alta + rs.pct_muito_alta)}%)</span></div>
+      <ul class="legenda">
+        <li><span class="sw linha" style="background:var(--nivel1)"></span>Prioridade máxima: encosta frágil e deslizamento recente</li>
+        <li><span class="sw linha" style="background:var(--nivel2)"></span>Prioridade alta</li>
+        <li><span class="sw linha" style="background:var(--nivel3)"></span>Prioridade média</li>
+        <li><span class="sw ponto" style="background:var(--noticia)"></span>Deslizamento noticiado</li>
+        <li><span class="sw ponto" style="background:var(--agua)"></span>Ponte ou bueiro que pode entupir</li>
+      </ul>
+      <h3>Trechos mais críticos</h3>
+      <ul class="lista">${top.map((f, i) => { const p = f.properties; return `<li><button type="button" data-t="${i}"><span class="tag" style="background:${cor(p.nivel)}"></span>${p.rodovia}, km ${fmt(p.km_oficial_inicio, 1)} a ${fmt(p.km_oficial_fim, 1)}<small>${nome[p.nivel]} · ${fmt(p.extensao_m)} m</small></button></li>`; }).join("")}</ul>
+      ${c1.html}${c2.html}${c3.html}
+      <p class="nota">A quilometragem foi conferida com acidentes registrados pela PRF.</p>`,
+      depois: () => { c1.ligar(); c2.ligar(); c3.ligar();
+        painel.querySelectorAll("[data-t]").forEach(b => b.addEventListener("click", () => {
+          const c = top[+b.dataset.t].geometry.coordinates; const xs = c.map(p => p[0]), ys = c.map(p => p[1]);
+          map.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], { padding: 80, maxZoom: 16 }); })); } };
+  };
+  let timer = null;
+  function animar(botao, chaveAno, min, max, aplicar) {
+    if (timer) { clearInterval(timer); timer = null; botao.textContent = "▶"; return; }
+    if (est[chaveAno] >= max) est[chaveAno] = min;
+    botao.textContent = "❚❚"; aplicar();
+    timer = setInterval(() => { if (est[chaveAno] >= max) { clearInterval(timer); timer = null; botao.textContent = "▶"; return; } est[chaveAno]++; aplicar(); }, 700);
+  }
+  const parar = () => { clearInterval(timer); timer = null; };
+  vistas.crescimento = () => {
+    const C = S.crescimento, porAno = {}; C.anos.forEach(a => { porAno[a.ano] = a; });
+    const c3 = chave("ck-risco-c", "Mostrar as encostas de atenção", false, ["risco"]);
+    const ultimo = C.periodos.find(p => p.periodo === "2022–2026"), ant = C.periodos.find(p => p.periodo === "até 1990");
+    const aplicar = () => { const A = est.cAno, a = porAno[A], cinco = C.anos.filter(x => x.ano > A - 5 && x.ano <= A).reduce((s, x) => s + x.novo_ha, 0);
+      document.getElementById("cr-slider").value = A; document.getElementById("cr-ano").value = A;
+      document.getElementById("cr-num").innerHTML = `<b>${fmt(a.urbano_ha)} ha</b><span>de área urbana em ${A}; ${fmt(cinco / 5, 1)} ha por ano nos 5 anos anteriores</span>`;
+      document.getElementById("cr-proj").hidden = A !== 2026; pintarCresc(); };
+    return { ids: ["cresc"], html: `<h2>Para onde a cidade cresceu e para onde tende a crescer?</h2>
+      <p>Arraste a barra para ver a cidade ano a ano, desde 1985. Em 2026, o azul mostra onde a cidade tende a crescer: quanto mais forte, mais provável.</p>
+      <div class="ano"><button type="button" id="cr-play" aria-label="Ver o crescimento ano a ano">▶</button><output id="cr-ano">2026</output></div>
+      <input type="range" id="cr-slider" min="1985" max="2026" step="1" value="${est.cAno}" aria-label="Ano">
+      <div class="escala"><span>1985</span><span>2000</span><span>2013</span><span>2026</span></div>
+      <div class="numero" id="cr-num"></div>
+      <ul class="legenda">
+        <li><span class="sw" style="background:var(--urb)"></span>Área urbana</li>
+        <li><span class="sw" style="background:var(--novo)"></span>Virou cidade nos últimos 3 anos</li>
+        <li id="cr-proj"><span class="sw grad"></span>Tendência de crescimento, de possível a mais provável</li>
+      </ul>
+      <label class="chave" for="ck-proj"><input type="checkbox" id="ck-proj" ${est.cProj ? "checked" : ""}> Mostrar a tendência de crescimento</label>
+      ${c3.html}
+      <p class="nota">No ritmo atual, a cidade ganha cerca de ${fmt(Math.round(C.projecao.ha / 10) * 10)} ha em 10 anos; o azul cobre cerca de ${fmt(C.tendencia_ha)} ha para mostrar as regiões em que isso é mais provável, não os lotes exatos. Até 1990, ${fmt(ant.pct_em_susc_alta_muito_alta, 1)}% do que virou cidade estava em encosta de atenção; entre 2022 e 2026, ${fmt(ultimo.pct_em_susc_alta_muito_alta, 1)}%.</p>`,
+      depois: () => { c3.ligar(); aplicar();
+        document.getElementById("cr-slider").addEventListener("input", e => { est.cAno = +e.target.value; aplicar(); });
+        document.getElementById("ck-proj").addEventListener("change", e => { est.cProj = e.target.checked; pintarCresc(); });
+        document.getElementById("cr-play").addEventListener("click", e => animar(e.currentTarget, "cAno", 1985, 2026, aplicar)); },
+      sair: parar };
+  };
+  vistas.mata = () => {
+    const M = S.desmatamento, porAno = {}; M.anos.forEach(a => { porAno[a.ano] = a; });
+    if (est.mAno > M.ano_max || est.mAno < M.ano_min) est.mAno = M.ano_max;
+    const aplicar = () => { const A = est.mAno, r = porAno[A];
+      document.getElementById("m-slider").value = A; document.getElementById("m-ano").value = A;
+      document.getElementById("m-num").innerHTML = `<b>${fmt(r.cortada_ha)} ha</b><span>de mata cortados de 2001 até ${A}; ${fmt(r.cortada_risco_ha)} ha em encosta de atenção. Em ${fmt(r.cortada_voltou_2026_ha)} ha deles a mata já voltou (situação em 2026)</span>`;
+      pintarMata(); };
+    return { ids: ["mata"], html: `<h2>Onde a mata foi cortada desde 2001?</h2>
+      <p>Arraste a barra: os cortes vão se somando ano a ano. Vermelho é corte em encosta íngreme ou de atenção para deslizamento, onde ele mais preocupa.</p>
+      <div class="ano"><button type="button" id="m-play" aria-label="Ver ano a ano">▶</button><output id="m-ano">${M.ano_max}</output></div>
+      <input type="range" id="m-slider" min="${M.ano_min}" max="${M.ano_max}" step="1" value="${est.mAno}" aria-label="Ano">
+      <div class="escala"><span>${M.ano_min}</span><span>2008</span><span>2016</span><span>${M.ano_max}</span></div>
+      <div class="numero" id="m-num"></div>
+      <ul class="legenda">
+        <li><span class="sw" style="background:var(--perdeu-risco)"></span>Cortada, em encosta de atenção</li>
+        <li><span class="sw" style="background:var(--perdeu)"></span>Cortada, em outros terrenos</li>
+        <li><span class="sw" style="background:var(--voltou)"></span>Cortada, mas a mata já voltou</li>
+        <li><span class="sw" style="background:var(--ganhou)"></span>Mata nova desde 1986</li>
+        <li><span class="sw" style="background:var(--mata);opacity:.6"></span>Mata hoje</li>
+      </ul>
+      <label class="chave" for="ck-mata"><input type="checkbox" id="ck-mata" ${est.mVerMata ? "checked" : ""}> Mostrar a mata de hoje e a mata nova</label>
+      <p class="nota">No saldo, a mata do município cresceu: cerca de ${fmt(Math.round(M.mata_1986_ha / 100) * 100)} ha em 1986 e ${fmt(Math.round(M.mata_hoje_ha / 100) * 100)} ha hoje. Boa parte dos cortes é colheita de eucalipto e acácia seguida de replantio. Cortes: Hansen Global Forest Change (Universidade de Maryland), pixel de 30 m.</p>`,
+      depois: () => { aplicar();
+        document.getElementById("m-slider").addEventListener("input", e => { est.mAno = +e.target.value; aplicar(); });
+        document.getElementById("ck-mata").addEventListener("change", e => { est.mVerMata = e.target.checked; pintarMata(); });
+        document.getElementById("m-play").addEventListener("click", e => animar(e.currentTarget, "mAno", M.ano_min, M.ano_max, aplicar)); },
+      sair: parar };
+  };
+
+  const ALIAS = { casas: "encostas", desmatamento: "mata" };
+  let atual = null, saidaAtual = null;
+  function mostrar(nome) {
+    nome = ALIAS[nome] || nome;
+    if (!vistas[nome]) nome = "encostas";
+    if (atual === nome) return;
+    if (saidaAtual) saidaAtual();
+    fecharJanela();
+    ["risco", "setores-f", "setores-l", "rodovias", "trechos", "travessias", "noticias", "cresc", "mata"].forEach(i => ver(i, false));
+    atual = nome;
+    document.querySelectorAll("nav.menu a").forEach(a => { if (a.dataset.v === nome) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+    const v = vistas[nome]();
+    painel.innerHTML = v.html;
+    v.ids.forEach(i => ver(i, true));
+    v.depois();
+    saidaAtual = v.sair || null;
+    painel.scrollTop = 0;
+  }
+})();
+</script>
+</body>
+</html>
