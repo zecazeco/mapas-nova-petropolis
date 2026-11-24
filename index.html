@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
 <link rel="stylesheet" href="lib/maplibre-gl.css">
 <style>
-/* Layout: barra com o menu dos 4 mapas; abaixo, painel de leitura à esquerda e mapa à direita
+/* Layout: barra com o menu dos 5 mapas; abaixo, painel de leitura à esquerda e mapa à direita
    (no celular, mapa em cima e painel embaixo). Uma pergunta por mapa, legenda curta. */
 :root {
   --bg: #eef1ec; --panel: #fbfcf9; --fg: #1d2620; --muted: #5d6a61; --line: #d3dbd3;
@@ -19,6 +19,7 @@
   --sgb: #2f6fd6; --sem-setor: #7a2fb5;
   --nivel1: #c81e1e; --nivel2: #f08c1e; --nivel3: #f2c94c;
   --agua: #2f8fd6; --noticia: #111814;
+  --cic: #ff2fb4; --cic-ano: #ffe600; --marg: #22d3ee;
   --urb: #ffd84d; --novo: #ff5a1f; --proj: #33c6e0;
   --nativa: #1f7a3a; --silv: #e0b21a; --nativa-nova: #8fe07a; --silv-nova: #f6e48f; --cortado: #f08c1e; --cortado-risco: #c81e1e;
   --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
@@ -135,7 +136,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   .palco { grid-row: 1; height: 58vh; }
   .painel { grid-row: 2; border-right: 0; border-top: 1px solid var(--line); overflow: visible; padding-right: max(16px, env(safe-area-inset-right, 0px)); }
   nav.menu { flex-wrap: nowrap; gap: clamp(0.15rem, 1vw, 0.3rem); width: 100%; }
-  nav.menu a, nav.menu button.ajuda-btn { padding: 0.35rem clamp(0.3rem, 1.6vw, 0.6rem); font-size: clamp(0.66rem, 3.2vw, 0.82rem); white-space: nowrap; }
+  nav.menu a, nav.menu button.ajuda-btn { padding: 0.35rem clamp(0.25rem, 1.3vw, 0.6rem); font-size: clamp(0.64rem, 3vw, 0.82rem); white-space: nowrap; }
   .so-pc { display: none; }
   .so-cel { display: inline; }
   nav.menu button.ajuda-btn { margin-left: auto; min-width: 2rem; font-weight: 800; }
@@ -149,11 +150,12 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 </head>
 <body>
 <header class="topo">
-  <h1 class="marca">Mapas de Risco de Nova Petrópolis<small>Feito com imagens de satélite e um modelo de deslizamentos (versão 4, nov/2026)</small></h1>
+  <h1 class="marca">Mapas de Risco de Nova Petrópolis<small>Feito com imagens de satélite e um modelo de deslizamentos (versão 5, nov/2026)</small></h1>
   <nav class="menu" aria-label="Escolha o mapa">
     <a href="#encostas" data-v="encostas">Encostas</a>
+    <a href="#cicatrizes" data-v="cicatrizes">Cicatrizes</a>
     <a href="#rodovias" data-v="rodovias">Rodovias</a>
-    <a href="#crescimento" data-v="crescimento">Crescimento<span class="so-pc"> da cidade</span></a>
+    <a href="#crescimento" data-v="crescimento"><span class="so-pc">Crescimento da cidade</span><span class="so-cel">Cidade</span></a>
     <a href="#mata" data-v="mata">Mata</a>
     <button type="button" class="ajuda-btn" id="ajuda-abrir" aria-haspopup="dialog" aria-label="Sobre e ajuda" title="Sobre e ajuda"><span class="so-pc">Sobre e ajuda</span><span class="so-cel" aria-hidden="true">?</span></button>
   </nav>
@@ -172,6 +174,31 @@ sinais de fragilidade quando vistas de cima: declive forte, terreno côncavo que
 água, beira de estrada e mata cortada. Estes mapas reúnem essas pistas num lugar só,
 numa linguagem simples, para que mais gente saiba onde olhar com atenção antes da próxima
 chuva forte.</p>
+<h2>Novidade da versão 5 (nov/2026): o mapa Cicatrizes</h2>
+<p>O novo mapa <strong>Cicatrizes</strong> mostra onde a terra <em>já</em> deslizou de 2018 a 2026: cerca de
+<strong>1.080 deslizamentos</strong> (240 ha) e <strong>1.280 trechos de erosão na margem de rio</strong>, encontrados
+pela própria série de imagens do satélite Sentinel-2 (uma imagem a cada 5 dias, pixel de 10 m).
+Isso inclui anos em que não houve inventário oficial, como 2018, 2020, 2023 e 2025.</p>
+<p>Como foi feito:</p>
+<ul>
+<li>Para cada pixel do município, o programa acompanha o verde da vegetação (NDVI) imagem por
+  imagem e procura <strong>quedas bruscas que não se recuperam logo</strong>, comparando com o entorno.</li>
+<li>Um modelo de aprendizado de máquina separa o que parece deslizamento de outras mudanças
+  (lavoura, corte de mata, obra, estrada, margem de rio), usando o formato da mancha, o relevo,
+  a distância de estradas e rios, o comportamento da vegetação antes e depois e a chuva.</li>
+<li>O modelo foi ensinado e conferido com os inventários de 2024 (SGB e UFRGS) e com <strong>sete
+  rodadas de conferência às cegas</strong>: 420 manchas sorteadas, olhadas uma a uma em imagens
+  coloridas do Sentinel-2 e do satélite brasileiro CBERS-4A (2 m) antes e depois da queda.</li>
+<li>Para cada regra nova, o critério de aceite foi escrito <strong>antes</strong> de medir o resultado, e
+  regras que não passaram ficaram de fora.</li>
+<li>Ficaram no mapa só as partes que passaram no teste:</li>
+<li>os deslizamentos em área de mata ou com queda forte de vegetação;</li>
+<li>os deslizamentos pequenos em área aberta, só quando houve chuva forte (≥ 77 mm em 24 h
+    no pluviômetro de Nova Petrópolis ou, sem ele, na estimativa de satélite da NASA) até
+    30 dias antes;</li>
+<li>manchas com menos de ~600 m² só quando estão a até 50 m de construções ou estradas;</li>
+<li>a erosão de margem só quando o modelo tem confiança alta.</li>
+</ul>
 <h2>Quanto os mapas acertam</h2>
 <blockquote>
 <p><strong>Resumo:</strong> as encostas pintadas no mapa ocupam <strong>16% do município</strong> e reuniram
@@ -224,6 +251,43 @@ mais deslizamentos</strong> que na média do município.</p>
   registradas. E cerca de um quarto dos deslizamentos aconteceu em áreas sem cor: <strong>área sem cor
   não é área sem risco</strong>.</li>
 </ul>
+<h3>Cicatrizes: as manchas são mesmo deslizamentos?</h3>
+<div class="tabela"><table>
+<thead>
+<tr>
+<th>Teste</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Manchas sorteadas e conferidas nas imagens</td>
+<td><strong>40% a 58%</strong> confirmadas como deslizamento</td>
+</tr>
+<tr>
+<td>Chuva de maio de 2024: manchas junto de um deslizamento do SGB ou da UFRGS</td>
+<td><strong>84%</strong></td>
+</tr>
+<tr>
+<td>Chuva de maio de 2024: deslizamentos do SGB e da UFRGS que o satélite viu</td>
+<td>308 de 816 (<strong>38%</strong>)</td>
+</tr>
+<tr>
+<td>Erosão de margem conferida nas imagens</td>
+<td><strong>44 de 45</strong> confirmadas</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>Nas chuvas fortes o mapa é confiável: quase todas as manchas de maio de 2024 estão junto de
+  deslizamentos confirmados no chão. Nos anos comuns, cerca de metade das manchas é outra
+  coisa: corte de estrada ou obra, lavoura, ou mudança pequena demais para ter certeza.</li>
+<li>O satélite <strong>não vê tudo</strong>: deslizamentos pequenos, embaixo de árvores ou escondidos por
+  nuvem escapam. Em 2024 ele viu cerca de 4 em cada 10 deslizamentos mapeados pelo SGB e pela UFRGS.</li>
+<li>A data mostrada é a da primeira imagem sem nuvem que mostra a mudança, e pode vir semanas
+  depois do deslizamento.</li>
+<li>Os testes foram feitos com um modelo que não tinha visto a parte do município testada.</li>
+</ul>
 <h3>Crescimento da cidade: a tendência acerta?</h3>
 <p>A tendência foi testada no passado: um modelo treinado só com o crescimento de 2006 a 2015
 apontou onde a cidade cresceria de 2016 a 2021, e o resultado foi comparado com o que de
@@ -271,6 +335,9 @@ fato aconteceu.</p>
    histórico de corte da mata, e aprendeu com os deslizamentos de 2024 de toda a região da Serra,
    não só do município. Desde a versão 4 (nov/2026), usa também um resumo do que os
    satélites viam de cada lugar em 2023, antes do desastre.</li>
+<li><strong>Cicatrizes</strong> (novo na versão 5): deslizamentos e erosão de margem de rio vistos pelo
+   satélite de 2018 a 2026, ano a ano. Mostra o que já aconteceu; o mapa de Encostas mostra
+   onde é mais provável acontecer.</li>
 <li><strong>Rodovias</strong>: trechos da BR-116 e da RS-235 mais sujeitos a queda de barreira, com a
    quilometragem das placas, pontes e bueiros que podem entupir e deslizamentos
    noticiados de 2016 a 2026. Cerca de 60% da BR-116 no município passa por encostas de
@@ -287,7 +354,7 @@ fato aconteceu.</p>
 painel traz os números de acerto ao lado da legenda.</p>
 <h2>Fontes</h2>
 <ul>
-<li>Imagens de satélite: Sentinel-2 (ESA/Copernicus) e Landsat (NASA/USGS)</li>
+<li>Imagens de satélite: Sentinel-2 (ESA/Copernicus), CBERS-4A (INPE) e Landsat (NASA/USGS)</li>
 <li>Resumo das imagens de satélite de 2023: Satellite Embeddings (Google DeepMind, via Google Earth Engine)</li>
 <li>Relevo: Copernicus DEM, FABDEM e Terrain Tiles (AWS)</li>
 <li>Inventários de deslizamentos de 2024: Serviço Geológico do Brasil (SGB), UFRGS e NASA</li>
@@ -296,7 +363,7 @@ painel traz os números de acerto ao lado da legenda.</p>
 <li>Mata e plantações: MapBiomas Brasil (Coleção 11)</li>
 <li>Cobertura e perda de floresta: ESA WorldCover e Global Forest Change (Hansen/UMD)</li>
 <li>Geologia e solos: IBGE</li>
-<li>Chuva: UFRGS e NASA POWER</li>
+<li>Chuva: pluviômetro de Nova Petrópolis, UFRGS, NASA POWER e NASA IMERG</li>
 <li>Estradas e localidades: OpenStreetMap</li>
 <li>Notícias: Prefeitura de Nova Petrópolis, ABC+, Jornal do Comércio, GZH e Jornal A Ponte</li>
 <li>Fundo do mapa: Esri World Imagery e OpenFreeMap</li>
@@ -307,6 +374,8 @@ painel traz os números de acerto ao lado da legenda.</p>
   recentes podem não aparecer.</li>
 <li>O modelo aprendeu principalmente com as chuvas de 2024; outro tipo de chuva pode
   produzir outro padrão de deslizamentos.</li>
+<li>O mapa Cicatrizes depende de imagens sem nuvem: em meses muito nublados a data da queda
+  fica imprecisa, e deslizamentos menores que cerca de 300 m² quase não aparecem.</li>
 <li>Profundidade do solo e drenagem de casas e estradas não são vistas por satélite e
   pesam muito no risco real.</li>
 </ul>
@@ -476,6 +545,23 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
       "line-width": ["match", ["get", "nivel"], 1, 9, 7] } });
     map.addLayer({ id: "travessias", type: "circle", source: "travessias", layout: { visibility: "none" }, paint: { "circle-radius": 7, "circle-color": css("--agua"), "circle-stroke-color": "#fff", "circle-stroke-width": 2.5 } });
     map.addLayer({ id: "noticias", type: "circle", source: "noticias", layout: { visibility: "none" }, paint: { "circle-radius": 6, "circle-color": css("--noticia"), "circle-stroke-color": "#fff", "circle-stroke-width": 2 } });
+    // cicatrizes (versão 5): arquivo à parte, carregado depois; ponto quando o zoom é pequeno, polígono quando grande
+    fetch("camadas/cicatrizes.geojson").then(r => r.json()).then(d => {
+      CIC = d;
+      const pts = { type: "FeatureCollection", features: d.features.map(f => { let c = f.geometry.coordinates;
+        while (Array.isArray(c[0][0])) c = c[0];
+        const xs = c.map(p => p[0]), ys = c.map(p => p[1]);
+        return { type: "Feature", properties: f.properties, geometry: { type: "Point", coordinates: [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2] } }; }) };
+      map.addSource("cic", { type: "geojson", data: d });
+      map.addSource("cic-pt", { type: "geojson", data: pts });
+      const antes = map.getLayer("limite") ? "limite" : undefined;
+      map.addLayer({ id: "cic-p", type: "circle", source: "cic-pt", maxzoom: 14.5, layout: { visibility: "none" }, paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 2.2, 14, 4.5], "circle-stroke-width": 0.6, "circle-stroke-color": "#000" } }, antes);
+      map.addLayer({ id: "cic-f", type: "fill", source: "cic", minzoom: 14.5, layout: { visibility: "none" }, paint: { "fill-opacity": 0.55 } }, antes);
+      map.addLayer({ id: "cic-l", type: "line", source: "cic", minzoom: 14.5, layout: { visibility: "none" }, paint: { "line-width": 2 } }, antes);
+      clicavel("cic-p", (f, ll) => popupCic(f, ll)); clicavel("cic-f", (f, ll) => popupCic(f, ll));
+      if (atual === "cicatrizes") { ["cic-p", "cic-f", "cic-l"].forEach(i => ver(i, true)); pintarCic(); }
+    }).catch(() => {});
     map.addLayer({ id: "limite", type: "line", source: "limite", paint: { "line-color": "#ffffff", "line-width": 2.5, "line-dasharray": [3, 2] } });
 
     // nomes das localidades (marcadores HTML, sem fontes externas)
@@ -517,7 +603,18 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
     const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(im, 0, 0); cb(x.getImageData(0, 0, c.width, c.height), c, x); }; im.src = src; };
   const hex = h => { const v = parseInt(h.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; };
   let cresc = null, mata = null;
-  const est = { cAno: 2026, cProj: true, mAno: 2025, mRisco: false };
+  const est = { cAno: 2026, cProj: true, mAno: 2025, mRisco: false, kAno: 2026, kMarg: true, kSo: false };
+  let CIC = null;
+  function popupCic(f, ll) { const p = f.properties, d = p.c === "d";
+    popup(ll, `<span class="pop-t">${d ? "Deslizamento visto pelo satélite" : "Erosão na margem de rio"}</span>Apareceu por volta de ${p.mes}<br>Cerca de ${fmt(p.m2)} m²<br><span class="pop-d">Detectado na série de imagens Sentinel-2 (pixel de 10 m). Pode ser outra mudança no terreno: veja "Quanto este mapa acerta?".</span>`); }
+  function pintarCic() {
+    if (!map.getLayer("cic-f")) return;
+    const A = est.kAno, filtro = ["all", ["<=", ["get", "ano"], A], est.kSo ? ["==", ["get", "ano"], A] : true,
+      est.kMarg ? true : ["==", ["get", "c"], "d"]];
+    const cor = ["case", ["==", ["get", "c"], "m"], css("--marg"), ["==", ["get", "ano"], A], css("--cic-ano"), css("--cic")];
+    ["cic-p", "cic-f", "cic-l"].forEach(i => map.setFilter(i, filtro));
+    map.setPaintProperty("cic-p", "circle-color", cor); map.setPaintProperty("cic-f", "fill-color", cor); map.setPaintProperty("cic-l", "line-color", cor);
+  }
   function iniciarCanvas() {
     ler(S.crescimento.img, (d, c, x) => { cresc = { d, c, x, o: x.createImageData(c.width, c.height) }; pintarCresc(); });
     ler(S.desmatamento.imgs[0], d0 => ler(S.desmatamento.imgs[1], d1 => ler(S.desmatamento.imgs[2], (d2, c, x) => {
@@ -695,6 +792,46 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
       sair: parar };
   };
 
+  vistas.cicatrizes = () => {
+    const R = () => CIC && CIC.resumo;
+    const aplicar = () => { const A = est.kAno; document.getElementById("k-slider").value = A; document.getElementById("k-ano").value = A;
+      const r = R(); if (r) { const a = r.anos.find(x => x.ano === A) || { desl: 0, desl_ha: 0, marg: 0 };
+        const ate = r.anos.filter(x => x.ano <= A).reduce((s, x) => s + x.desl, 0);
+        document.getElementById("k-num").innerHTML = `<b>${fmt(a.desl)}</b><span>deslizamentos vistos em ${A} (${fmt(a.desl_ha, 1)} ha)${est.kMarg ? ` e ${fmt(a.marg)} trechos de erosão de margem` : ""}; ${fmt(ate)} deslizamentos desde 2018</span>`; }
+      pintarCic(); };
+    const r = R() || {};
+    const c3 = chave("ck-risco-k", "Mostrar as encostas de atenção", false, ["risco"]);
+    return { ids: ["cic-p", "cic-f", "cic-l"], html: `<h2>Onde a terra já deslizou?</h2>
+      <p>Cada ponto é uma mancha onde a vegetação sumiu de repente e não voltou logo, vista na série de imagens do satélite Sentinel-2 desde 2018. Aproxime o mapa para ver o contorno. Arraste a barra para ver ano a ano.</p>
+      <div class="ano"><button type="button" id="k-play" aria-label="Ver ano a ano">▶</button><output id="k-ano">${est.kAno}</output></div>
+      <input type="range" id="k-slider" min="2018" max="2026" step="1" value="${est.kAno}" aria-label="Ano">
+      <div class="escala"><span>2018</span><span>2020</span><span>2022</span><span>2024</span><span>2026</span></div>
+      <div class="numero" id="k-num"></div>
+      <ul class="legenda">
+        <li><span class="sw ponto" style="background:var(--cic-ano)"></span>Deslizamento visto no ano escolhido</li>
+        <li><span class="sw ponto" style="background:var(--cic)"></span>Deslizamento de anos anteriores</li>
+        <li><span class="sw ponto" style="background:var(--marg)"></span>Erosão na margem de rio</li>
+      </ul>
+      <details class="acerto" open><summary>Quanto este mapa acerta?</summary>
+        <ul>
+          <li>Conferindo manchas sorteadas nas imagens, de ${r.conferencia_desl_min || 40}% a ${r.conferencia_desl_max || 58}% se confirmaram como deslizamento. O resto foi sobretudo corte de estrada ou obra, lavoura, ou mudança pequena demais para ter certeza.</li>
+          <li>Na chuva de maio de 2024, ${r.inventario_2024_pct || 84}% das manchas apontadas ficam junto de um deslizamento mapeado pelo SGB ou pela UFRGS. Mas o satélite viu só ${fmt(r.inventario_2024_pegos || 308)} dos ${fmt(r.inventario_2024_total || 816)} deslizamentos desses mapas: os pequenos e os escondidos por nuvem escapam.</li>
+          <li>Erosão de margem: ${r.margem_confirmadas || 44} de ${r.margem_conferidas || 45} manchas conferidas se confirmaram.</li>
+        </ul>
+      </details>
+      <label class="chave" for="ck-so"><input type="checkbox" id="ck-so" ${est.kSo ? "checked" : ""}> Só o ano escolhido</label>
+      <label class="chave" for="ck-marg"><input type="checkbox" id="ck-marg" ${est.kMarg ? "checked" : ""}> Mostrar erosão na margem de rio</label>
+      ${c3.html}
+      <p class="nota">A data é a da primeira imagem limpa que mostra a mudança; com nuvem, pode ser semanas depois do deslizamento. Manchas menores que cerca de 600 m² só aparecem quando estão perto de casas ou estradas. Este mapa mostra o que já aconteceu; o mapa de Encostas mostra onde é mais provável acontecer.</p>`,
+      depois: () => { c3.ligar(); aplicar();
+        if (!R()) { const t = setInterval(() => { if (R()) { clearInterval(t); if (atual === "cicatrizes") aplicar(); } }, 300); }
+        document.getElementById("k-slider").addEventListener("input", e => { est.kAno = +e.target.value; aplicar(); });
+        document.getElementById("ck-so").addEventListener("change", e => { est.kSo = e.target.checked; aplicar(); });
+        document.getElementById("ck-marg").addEventListener("change", e => { est.kMarg = e.target.checked; aplicar(); });
+        document.getElementById("k-play").addEventListener("click", e => animar(e.currentTarget, "kAno", 2018, 2026, aplicar)); },
+      sair: parar };
+  };
+
   const ALIAS = { casas: "encostas", desmatamento: "mata" };
   let atual = null, saidaAtual = null;
   function mostrar(nome) {
@@ -703,7 +840,7 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
     if (atual === nome) return;
     if (saidaAtual) saidaAtual();
     fecharJanela();
-    ["risco", "setores-f", "setores-l", "rodovias", "trechos", "travessias", "noticias", "cresc", "mata"].forEach(i => ver(i, false));
+    ["risco", "setores-f", "setores-l", "rodovias", "trechos", "travessias", "noticias", "cresc", "mata", "cic-p", "cic-f", "cic-l"].forEach(i => ver(i, false));
     atual = nome;
     document.querySelectorAll("nav.menu a").forEach(a => { if (a.dataset.v === nome) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
     const v = vistas[nome]();

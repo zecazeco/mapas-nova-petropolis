@@ -15,6 +15,33 @@ sinais de fragilidade quando vistas de cima: declive forte, terreno côncavo que
 numa linguagem simples, para que mais gente saiba onde olhar com atenção antes da próxima
 chuva forte.
 
+## Novidade da versão 5 (nov/2026): o mapa Cicatrizes
+
+O novo mapa **Cicatrizes** mostra onde a terra *já* deslizou de 2018 a 2026: cerca de
+**1.080 deslizamentos** (240 ha) e **1.280 trechos de erosão na margem de rio**, encontrados
+pela própria série de imagens do satélite Sentinel-2 (uma imagem a cada 5 dias, pixel de 10 m).
+Isso inclui anos em que não houve inventário oficial, como 2018, 2020, 2023 e 2025.
+
+Como foi feito:
+
+- Para cada pixel do município, o programa acompanha o verde da vegetação (NDVI) imagem por
+  imagem e procura **quedas bruscas que não se recuperam logo**, comparando com o entorno.
+- Um modelo de aprendizado de máquina separa o que parece deslizamento de outras mudanças
+  (lavoura, corte de mata, obra, estrada, margem de rio), usando o formato da mancha, o relevo,
+  a distância de estradas e rios, o comportamento da vegetação antes e depois e a chuva.
+- O modelo foi ensinado e conferido com os inventários de 2024 (SGB e UFRGS) e com **sete
+  rodadas de conferência às cegas**: 420 manchas sorteadas, olhadas uma a uma em imagens
+  coloridas do Sentinel-2 e do satélite brasileiro CBERS-4A (2 m) antes e depois da queda.
+- Para cada regra nova, o critério de aceite foi escrito **antes** de medir o resultado, e
+  regras que não passaram ficaram de fora.
+- Ficaram no mapa só as partes que passaram no teste:
+  - os deslizamentos em área de mata ou com queda forte de vegetação;
+  - os deslizamentos pequenos em área aberta, só quando houve chuva forte (≥ 77 mm em 24 h
+    no pluviômetro de Nova Petrópolis ou, sem ele, na estimativa de satélite da NASA) até
+    30 dias antes;
+  - manchas com menos de ~600 m² só quando estão a até 50 m de construções ou estradas;
+  - a erosão de margem só quando o modelo tem confiança alta.
+
 ## Quanto os mapas acertam
 
 > **Resumo:** as encostas pintadas no mapa ocupam **16% do município** e reuniram
@@ -43,6 +70,24 @@ chuva forte.
   registradas. E cerca de um quarto dos deslizamentos aconteceu em áreas sem cor: **área sem cor
   não é área sem risco**.
 
+### Cicatrizes: as manchas são mesmo deslizamentos?
+
+| Teste | Resultado |
+|---|---|
+| Manchas sorteadas e conferidas nas imagens | **40% a 58%** confirmadas como deslizamento |
+| Chuva de maio de 2024: manchas junto de um deslizamento do SGB ou da UFRGS | **84%** |
+| Chuva de maio de 2024: deslizamentos do SGB e da UFRGS que o satélite viu | 308 de 816 (**38%**) |
+| Erosão de margem conferida nas imagens | **44 de 45** confirmadas |
+
+- Nas chuvas fortes o mapa é confiável: quase todas as manchas de maio de 2024 estão junto de
+  deslizamentos confirmados no chão. Nos anos comuns, cerca de metade das manchas é outra
+  coisa: corte de estrada ou obra, lavoura, ou mudança pequena demais para ter certeza.
+- O satélite **não vê tudo**: deslizamentos pequenos, embaixo de árvores ou escondidos por
+  nuvem escapam. Em 2024 ele viu cerca de 4 em cada 10 deslizamentos mapeados pelo SGB e pela UFRGS.
+- A data mostrada é a da primeira imagem sem nuvem que mostra a mudança, e pode vir semanas
+  depois do deslizamento.
+- Os testes foram feitos com um modelo que não tinha visto a parte do município testada.
+
 ### Crescimento da cidade: a tendência acerta?
 
 A tendência foi testada no passado: um modelo treinado só com o crescimento de 2006 a 2015
@@ -67,14 +112,17 @@ fato aconteceu.
    histórico de corte da mata, e aprendeu com os deslizamentos de 2024 de toda a região da Serra,
    não só do município. Desde a versão 4 (nov/2026), usa também um resumo do que os
    satélites viam de cada lugar em 2023, antes do desastre.
-2. **Rodovias**: trechos da BR-116 e da RS-235 mais sujeitos a queda de barreira, com a
+2. **Cicatrizes** (novo na versão 5): deslizamentos e erosão de margem de rio vistos pelo
+   satélite de 2018 a 2026, ano a ano. Mostra o que já aconteceu; o mapa de Encostas mostra
+   onde é mais provável acontecer.
+3. **Rodovias**: trechos da BR-116 e da RS-235 mais sujeitos a queda de barreira, com a
    quilometragem das placas, pontes e bueiros que podem entupir e deslizamentos
    noticiados de 2016 a 2026. Cerca de 60% da BR-116 no município passa por encostas de
    atenção alta ou muito alta.
-3. **Crescimento da cidade**: a área urbana ano a ano desde 1985 e as regiões com tendência
+4. **Crescimento da cidade**: a área urbana ano a ano desde 1985 e as regiões com tendência
    de crescimento nos próximos 10 anos (cerca de 210 ha no ritmo atual). Mostra também
    quanto do crescimento recente avançou sobre encostas de atenção.
-4. **Mata**: mata nativa e plantações ano a ano desde 2001, onde foram cortadas e onde a mata
+5. **Mata**: mata nativa e plantações ano a ano desde 2001, onde foram cortadas e onde a mata
    voltou, com destaque para cortes em encostas de atenção. De 2001 a 2025, cerca de
    1.850 ha de mata ou plantação foram cortados e não voltaram (240 ha em encostas de
    atenção), e cerca de 2.700 ha de mata surgiram ou voltaram.
@@ -84,7 +132,7 @@ painel traz os números de acerto ao lado da legenda.
 
 ## Fontes
 
-- Imagens de satélite: Sentinel-2 (ESA/Copernicus) e Landsat (NASA/USGS)
+- Imagens de satélite: Sentinel-2 (ESA/Copernicus), CBERS-4A (INPE) e Landsat (NASA/USGS)
 - Resumo das imagens de satélite de 2023: Satellite Embeddings (Google DeepMind, via Google Earth Engine)
 - Relevo: Copernicus DEM, FABDEM e Terrain Tiles (AWS)
 - Inventários de deslizamentos de 2024: Serviço Geológico do Brasil (SGB), UFRGS e NASA
@@ -93,7 +141,7 @@ painel traz os números de acerto ao lado da legenda.
 - Mata e plantações: MapBiomas Brasil (Coleção 11)
 - Cobertura e perda de floresta: ESA WorldCover e Global Forest Change (Hansen/UMD)
 - Geologia e solos: IBGE
-- Chuva: UFRGS e NASA POWER
+- Chuva: pluviômetro de Nova Petrópolis, UFRGS, NASA POWER e NASA IMERG
 - Estradas e localidades: OpenStreetMap
 - Notícias: Prefeitura de Nova Petrópolis, ABC+, Jornal do Comércio, GZH e Jornal A Ponte
 - Fundo do mapa: Esri World Imagery e OpenFreeMap
@@ -104,6 +152,8 @@ painel traz os números de acerto ao lado da legenda.
   recentes podem não aparecer.
 - O modelo aprendeu principalmente com as chuvas de 2024; outro tipo de chuva pode
   produzir outro padrão de deslizamentos.
+- O mapa Cicatrizes depende de imagens sem nuvem: em meses muito nublados a data da queda
+  fica imprecisa, e deslizamentos menores que cerca de 300 m² quase não aparecem.
 - Profundidade do solo e drenagem de casas e estradas não são vistas por satélite e
   pesam muito no risco real.
 
