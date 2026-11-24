@@ -17,10 +17,16 @@ chuva forte.
 
 ## Novidade da versão 5 (nov/2026): o mapa Cicatrizes
 
-O novo mapa **Cicatrizes** mostra onde a terra *já* deslizou de 2018 a 2026: cerca de
-**1.080 deslizamentos** (240 ha) e **1.280 trechos de erosão na margem de rio**, encontrados
-pela própria série de imagens do satélite Sentinel-2 (uma imagem a cada 5 dias, pixel de 10 m).
-Isso inclui anos em que não houve inventário oficial, como 2018, 2020, 2023 e 2025.
+O novo mapa **Cicatrizes** mostra onde a terra *já* deslizou de 2017 a 2026: cerca de
+**1.260 deslizamentos** (270 ha) e **300 trechos de erosão na margem de rio** dentro do município,
+encontrados pela própria série de imagens do satélite Sentinel-2 (uma imagem a cada 5 dias, pixel de 10 m).
+Isso inclui anos em que não houve inventário oficial, como 2017, 2018, 2020, 2023 e 2025.
+
+Atualização de nov/2026: entrou o ano de 2017 (com as chuvas fortes de abril e de junho–julho);
+o mapa mostra também as manchas até 1 km além da divisa, para ver as duas margens do Rio Caí;
+e as margens de rio foram limpas: saíram as que eram beira de açude ou estrada, cada trecho ficou
+restrito a 30 m da água ou de um arroio, e trechos sobrepostos viraram um só (o cartão lista os
+códigos e anos juntados).
 
 Como foi feito:
 
@@ -113,7 +119,7 @@ fato aconteceu.
    não só do município. Desde a versão 4 (nov/2026), usa também um resumo do que os
    satélites viam de cada lugar em 2023, antes do desastre.
 2. **Cicatrizes** (novo na versão 5): deslizamentos e erosão de margem de rio vistos pelo
-   satélite de 2018 a 2026. Mostra o que já aconteceu; o mapa de Encostas mostra onde é mais
+   satélite de 2017 a 2026. Mostra o que já aconteceu; o mapa de Encostas mostra onde é mais
    provável acontecer. Cada mancha tem um código (toque nela): se alguma não confere com o
    terreno, informe o código para que seja corrigida.
 3. **Rodovias**: trechos da BR-116 e da RS-235 mais sujeitos a queda de barreira, com a

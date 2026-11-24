@@ -175,10 +175,15 @@ sinais de fragilidade quando vistas de cima: declive forte, terreno côncavo que
 numa linguagem simples, para que mais gente saiba onde olhar com atenção antes da próxima
 chuva forte.</p>
 <h2>Novidade da versão 5 (nov/2026): o mapa Cicatrizes</h2>
-<p>O novo mapa <strong>Cicatrizes</strong> mostra onde a terra <em>já</em> deslizou de 2018 a 2026: cerca de
-<strong>1.080 deslizamentos</strong> (240 ha) e <strong>1.280 trechos de erosão na margem de rio</strong>, encontrados
-pela própria série de imagens do satélite Sentinel-2 (uma imagem a cada 5 dias, pixel de 10 m).
-Isso inclui anos em que não houve inventário oficial, como 2018, 2020, 2023 e 2025.</p>
+<p>O novo mapa <strong>Cicatrizes</strong> mostra onde a terra <em>já</em> deslizou de 2017 a 2026: cerca de
+<strong>1.260 deslizamentos</strong> (270 ha) e <strong>300 trechos de erosão na margem de rio</strong> dentro do município,
+encontrados pela própria série de imagens do satélite Sentinel-2 (uma imagem a cada 5 dias, pixel de 10 m).
+Isso inclui anos em que não houve inventário oficial, como 2017, 2018, 2020, 2023 e 2025.</p>
+<p>Atualização de nov/2026: entrou o ano de 2017 (com as chuvas fortes de abril e de junho–julho);
+o mapa mostra também as manchas até 1 km além da divisa, para ver as duas margens do Rio Caí;
+e as margens de rio foram limpas: saíram as que eram beira de açude ou estrada, cada trecho ficou
+restrito a 30 m da água ou de um arroio, e trechos sobrepostos viraram um só (o cartão lista os
+códigos e anos juntados).</p>
 <p>Como foi feito:</p>
 <ul>
 <li>Para cada pixel do município, o programa acompanha o verde da vegetação (NDVI) imagem por
@@ -336,7 +341,7 @@ fato aconteceu.</p>
    não só do município. Desde a versão 4 (nov/2026), usa também um resumo do que os
    satélites viam de cada lugar em 2023, antes do desastre.</li>
 <li><strong>Cicatrizes</strong> (novo na versão 5): deslizamentos e erosão de margem de rio vistos pelo
-   satélite de 2018 a 2026. Mostra o que já aconteceu; o mapa de Encostas mostra onde é mais
+   satélite de 2017 a 2026. Mostra o que já aconteceu; o mapa de Encostas mostra onde é mais
    provável acontecer. Cada mancha tem um código (toque nela): se alguma não confere com o
    terreno, informe o código para que seja corrigida.</li>
 <li><strong>Rodovias</strong>: trechos da BR-116 e da RS-235 mais sujeitos a queda de barreira, com a
@@ -428,7 +433,7 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
     return [[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]]; })();
 
   const map = new maplibregl.Map({
-    container: "mapa", bounds: caixa, fitBoundsOptions: { padding: 20 }, maxPitch: 60, minZoom: 10, maxZoom: 18.5,
+    container: "mapa", bounds: caixa, fitBoundsOptions: { padding: 50 }, maxPitch: 60, minZoom: 9, maxZoom: 18.5,
     attributionControl: false, fadeDuration: 0,
     style: {
       version: 8,
@@ -607,7 +612,7 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
   const est = { cAno: 2026, cProj: true, mAno: 2025, mRisco: false, kMarg: true };
   let CIC = null;
   function popupCic(f, ll) { const p = f.properties, d = p.c === "d";
-    popup(ll, `<span class="pop-t">${d ? "Deslizamento visto pelo satélite" : "Erosão na margem de rio"}</span>Código <b>${p.cod}</b><br>Apareceu por volta de ${p.mes}<br>Cerca de ${fmt(p.m2)} m²<br><span class="pop-d">Detectado na série de imagens Sentinel-2 (pixel de 10 m). Pode ser outra mudança no terreno: veja "Quanto este mapa acerta?".</span>`); }
+    popup(ll, `<span class="pop-t">${d ? "Deslizamento visto pelo satélite" : "Erosão na margem de rio"}</span>Código <b>${p.cod}</b>${p.tambem ? `<br><small>junta ${p.tambem.split(" ").length + 1} manchas sobrepostas${p.tambem.split(" ").length <= 8 ? ": " + p.tambem : ""}</small>` : ""}<br>${d || !p.tambem ? `Apareceu por volta de ${p.mes}` : `Mudanças vistas em ${p.anos}`}<br>Cerca de ${fmt(p.m2)} m²<br><span class="pop-d">Detectado na série de imagens Sentinel-2 (pixel de 10 m). Pode ser outra mudança no terreno: veja "Quanto este mapa acerta?".</span>`); }
   function pintarCic() {
     if (!map.getLayer("cic-f")) return;
     const filtro = est.kMarg ? ["has", "c"] : ["==", ["get", "c"], "d"];
@@ -796,12 +801,12 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
     const R = () => CIC && CIC.resumo;
     const aplicar = () => { const r = R(); if (r) {
         const ha = r.anos.reduce((s, x) => s + x.desl_ha, 0), anos = r.anos.filter(x => x.desl > 0).sort((a, b) => b.desl - a.desl);
-        document.getElementById("k-num").innerHTML = `<b>${fmt(r.desl)}</b><span>deslizamentos vistos de 2018 a 2026 (${fmt(ha)} ha)${est.kMarg ? ` e ${fmt(r.marg)} trechos de erosão de margem` : ""}; o ano com mais foi ${anos[0].ano} (${fmt(anos[0].desl)})</span>`; }
+        document.getElementById("k-num").innerHTML = `<b>${fmt(r.desl)}</b><span>deslizamentos vistos de ${r.anos[0].ano} a 2026 (${fmt(ha)} ha)${est.kMarg ? ` e ${fmt(r.marg)} trechos de erosão de margem` : ""}; o ano com mais foi ${anos[0].ano} (${fmt(anos[0].desl)})</span>`; }
       pintarCic(); };
     const r = R() || {};
     const c3 = chave("ck-risco-k", "Mostrar as encostas de atenção", false, ["risco"]);
     return { ids: ["cic-p", "cic-f", "cic-l"], html: `<h2>Onde a terra já deslizou?</h2>
-      <p>Cada ponto é uma mancha onde a vegetação sumiu de repente e não voltou logo, vista na série de imagens do satélite Sentinel-2 de 2018 a 2026. Aproxime o mapa para ver o contorno e toque numa mancha para ver quando ela apareceu e o código dela.</p>
+      <p>Cada ponto é uma mancha onde a vegetação sumiu de repente e não voltou logo, vista na série de imagens do satélite Sentinel-2 desde ${r.anos ? r.anos[0].ano : 2018}. Aproxime o mapa para ver o contorno e toque numa mancha para ver quando ela apareceu e o código dela.</p>
       <div class="numero" id="k-num"></div>
       <ul class="legenda">
         <li><span class="sw ponto" style="background:var(--cic)"></span>Deslizamento</li>
