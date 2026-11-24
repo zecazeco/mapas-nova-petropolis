@@ -113,8 +113,9 @@ fato aconteceu.
    não só do município. Desde a versão 4 (nov/2026), usa também um resumo do que os
    satélites viam de cada lugar em 2023, antes do desastre.
 2. **Cicatrizes** (novo na versão 5): deslizamentos e erosão de margem de rio vistos pelo
-   satélite de 2018 a 2026, ano a ano. Mostra o que já aconteceu; o mapa de Encostas mostra
-   onde é mais provável acontecer.
+   satélite de 2018 a 2026. Mostra o que já aconteceu; o mapa de Encostas mostra onde é mais
+   provável acontecer. Cada mancha tem um código (toque nela): se alguma não confere com o
+   terreno, informe o código para que seja corrigida.
 3. **Rodovias**: trechos da BR-116 e da RS-235 mais sujeitos a queda de barreira, com a
    quilometragem das placas, pontes e bueiros que podem entupir e deslizamentos
    noticiados de 2016 a 2026. Cerca de 60% da BR-116 no município passa por encostas de

@@ -19,7 +19,7 @@
   --sgb: #2f6fd6; --sem-setor: #7a2fb5;
   --nivel1: #c81e1e; --nivel2: #f08c1e; --nivel3: #f2c94c;
   --agua: #2f8fd6; --noticia: #111814;
-  --cic: #ff2fb4; --cic-ano: #ffe600; --marg: #22d3ee;
+  --cic: #ff2fb4; --marg: #22d3ee;
   --urb: #ffd84d; --novo: #ff5a1f; --proj: #33c6e0;
   --nativa: #1f7a3a; --silv: #e0b21a; --nativa-nova: #8fe07a; --silv-nova: #f6e48f; --cortado: #f08c1e; --cortado-risco: #c81e1e;
   --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
@@ -336,8 +336,9 @@ fato aconteceu.</p>
    não só do município. Desde a versão 4 (nov/2026), usa também um resumo do que os
    satélites viam de cada lugar em 2023, antes do desastre.</li>
 <li><strong>Cicatrizes</strong> (novo na versão 5): deslizamentos e erosão de margem de rio vistos pelo
-   satélite de 2018 a 2026, ano a ano. Mostra o que já aconteceu; o mapa de Encostas mostra
-   onde é mais provável acontecer.</li>
+   satélite de 2018 a 2026. Mostra o que já aconteceu; o mapa de Encostas mostra onde é mais
+   provável acontecer. Cada mancha tem um código (toque nela): se alguma não confere com o
+   terreno, informe o código para que seja corrigida.</li>
 <li><strong>Rodovias</strong>: trechos da BR-116 e da RS-235 mais sujeitos a queda de barreira, com a
    quilometragem das placas, pontes e bueiros que podem entupir e deslizamentos
    noticiados de 2016 a 2026. Cerca de 60% da BR-116 no município passa por encostas de
@@ -603,15 +604,14 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
     const x = c.getContext("2d", { willReadFrequently: true }); x.drawImage(im, 0, 0); cb(x.getImageData(0, 0, c.width, c.height), c, x); }; im.src = src; };
   const hex = h => { const v = parseInt(h.slice(1), 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; };
   let cresc = null, mata = null;
-  const est = { cAno: 2026, cProj: true, mAno: 2025, mRisco: false, kAno: 2026, kMarg: true, kSo: false };
+  const est = { cAno: 2026, cProj: true, mAno: 2025, mRisco: false, kMarg: true };
   let CIC = null;
   function popupCic(f, ll) { const p = f.properties, d = p.c === "d";
-    popup(ll, `<span class="pop-t">${d ? "Deslizamento visto pelo satélite" : "Erosão na margem de rio"}</span>Apareceu por volta de ${p.mes}<br>Cerca de ${fmt(p.m2)} m²<br><span class="pop-d">Detectado na série de imagens Sentinel-2 (pixel de 10 m). Pode ser outra mudança no terreno: veja "Quanto este mapa acerta?".</span>`); }
+    popup(ll, `<span class="pop-t">${d ? "Deslizamento visto pelo satélite" : "Erosão na margem de rio"}</span>Código <b>${p.cod}</b><br>Apareceu por volta de ${p.mes}<br>Cerca de ${fmt(p.m2)} m²<br><span class="pop-d">Detectado na série de imagens Sentinel-2 (pixel de 10 m). Pode ser outra mudança no terreno: veja "Quanto este mapa acerta?".</span>`); }
   function pintarCic() {
     if (!map.getLayer("cic-f")) return;
-    const A = est.kAno, filtro = ["all", ["<=", ["get", "ano"], A], est.kSo ? ["==", ["get", "ano"], A] : true,
-      est.kMarg ? true : ["==", ["get", "c"], "d"]];
-    const cor = ["case", ["==", ["get", "c"], "m"], css("--marg"), ["==", ["get", "ano"], A], css("--cic-ano"), css("--cic")];
+    const filtro = est.kMarg ? ["has", "c"] : ["==", ["get", "c"], "d"];
+    const cor = ["case", ["==", ["get", "c"], "m"], css("--marg"), css("--cic")];
     ["cic-p", "cic-f", "cic-l"].forEach(i => map.setFilter(i, filtro));
     map.setPaintProperty("cic-p", "circle-color", cor); map.setPaintProperty("cic-f", "fill-color", cor); map.setPaintProperty("cic-l", "line-color", cor);
   }
@@ -794,22 +794,17 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
 
   vistas.cicatrizes = () => {
     const R = () => CIC && CIC.resumo;
-    const aplicar = () => { const A = est.kAno; document.getElementById("k-slider").value = A; document.getElementById("k-ano").value = A;
-      const r = R(); if (r) { const a = r.anos.find(x => x.ano === A) || { desl: 0, desl_ha: 0, marg: 0 };
-        const ate = r.anos.filter(x => x.ano <= A).reduce((s, x) => s + x.desl, 0);
-        document.getElementById("k-num").innerHTML = `<b>${fmt(a.desl)}</b><span>deslizamentos vistos em ${A} (${fmt(a.desl_ha, 1)} ha)${est.kMarg ? ` e ${fmt(a.marg)} trechos de erosão de margem` : ""}; ${fmt(ate)} deslizamentos desde 2018</span>`; }
+    const aplicar = () => { const r = R(); if (r) {
+        const ha = r.anos.reduce((s, x) => s + x.desl_ha, 0), anos = r.anos.filter(x => x.desl > 0).sort((a, b) => b.desl - a.desl);
+        document.getElementById("k-num").innerHTML = `<b>${fmt(r.desl)}</b><span>deslizamentos vistos de 2018 a 2026 (${fmt(ha)} ha)${est.kMarg ? ` e ${fmt(r.marg)} trechos de erosão de margem` : ""}; o ano com mais foi ${anos[0].ano} (${fmt(anos[0].desl)})</span>`; }
       pintarCic(); };
     const r = R() || {};
     const c3 = chave("ck-risco-k", "Mostrar as encostas de atenção", false, ["risco"]);
     return { ids: ["cic-p", "cic-f", "cic-l"], html: `<h2>Onde a terra já deslizou?</h2>
-      <p>Cada ponto é uma mancha onde a vegetação sumiu de repente e não voltou logo, vista na série de imagens do satélite Sentinel-2 desde 2018. Aproxime o mapa para ver o contorno. Arraste a barra para ver ano a ano.</p>
-      <div class="ano"><button type="button" id="k-play" aria-label="Ver ano a ano">▶</button><output id="k-ano">${est.kAno}</output></div>
-      <input type="range" id="k-slider" min="2018" max="2026" step="1" value="${est.kAno}" aria-label="Ano">
-      <div class="escala"><span>2018</span><span>2020</span><span>2022</span><span>2024</span><span>2026</span></div>
+      <p>Cada ponto é uma mancha onde a vegetação sumiu de repente e não voltou logo, vista na série de imagens do satélite Sentinel-2 de 2018 a 2026. Aproxime o mapa para ver o contorno e toque numa mancha para ver quando ela apareceu e o código dela.</p>
       <div class="numero" id="k-num"></div>
       <ul class="legenda">
-        <li><span class="sw ponto" style="background:var(--cic-ano)"></span>Deslizamento visto no ano escolhido</li>
-        <li><span class="sw ponto" style="background:var(--cic)"></span>Deslizamento de anos anteriores</li>
+        <li><span class="sw ponto" style="background:var(--cic)"></span>Deslizamento</li>
         <li><span class="sw ponto" style="background:var(--marg)"></span>Erosão na margem de rio</li>
       </ul>
       <details class="acerto" open><summary>Quanto este mapa acerta?</summary>
@@ -819,17 +814,12 @@ Eles indicam onde olhar com mais atenção e não substituem a vistoria da Defes
           <li>Erosão de margem: ${r.margem_confirmadas || 44} de ${r.margem_conferidas || 45} manchas conferidas se confirmaram.</li>
         </ul>
       </details>
-      <label class="chave" for="ck-so"><input type="checkbox" id="ck-so" ${est.kSo ? "checked" : ""}> Só o ano escolhido</label>
       <label class="chave" for="ck-marg"><input type="checkbox" id="ck-marg" ${est.kMarg ? "checked" : ""}> Mostrar erosão na margem de rio</label>
       ${c3.html}
-      <p class="nota">A data é a da primeira imagem limpa que mostra a mudança; com nuvem, pode ser semanas depois do deslizamento. Manchas menores que cerca de 600 m² só aparecem quando estão perto de casas ou estradas. Este mapa mostra o que já aconteceu; o mapa de Encostas mostra onde é mais provável acontecer.</p>`,
+      <p class="nota">Viu uma mancha que não confere com o terreno? Anote o código dela (toque na mancha) e avise. A data é a da primeira imagem limpa que mostra a mudança; com nuvem, pode ser semanas depois. Manchas menores que cerca de 600 m² só aparecem quando estão perto de casas ou estradas. Este mapa mostra o que já aconteceu; o mapa de Encostas mostra onde é mais provável acontecer.</p>`,
       depois: () => { c3.ligar(); aplicar();
         if (!R()) { const t = setInterval(() => { if (R()) { clearInterval(t); if (atual === "cicatrizes") aplicar(); } }, 300); }
-        document.getElementById("k-slider").addEventListener("input", e => { est.kAno = +e.target.value; aplicar(); });
-        document.getElementById("ck-so").addEventListener("change", e => { est.kSo = e.target.checked; aplicar(); });
-        document.getElementById("ck-marg").addEventListener("change", e => { est.kMarg = e.target.checked; aplicar(); });
-        document.getElementById("k-play").addEventListener("click", e => animar(e.currentTarget, "kAno", 2018, 2026, aplicar)); },
-      sair: parar };
+        document.getElementById("ck-marg").addEventListener("change", e => { est.kMarg = e.target.checked; aplicar(); }); } };
   };
 
   const ALIAS = { casas: "encostas", desmatamento: "mata" };
