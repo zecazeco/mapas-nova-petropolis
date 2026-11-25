@@ -18,7 +18,7 @@ chuva forte.
 ## Novidade da versão 5 (nov/2026): o mapa Cicatrizes
 
 O novo mapa **Cicatrizes** mostra onde a terra *já* deslizou de 2017 a 2026: cerca de
-**1.260 deslizamentos** (270 ha) e **300 trechos de erosão na margem de rio** dentro do município,
+**1.000 deslizamentos** (230 ha) e **315 trechos de erosão na margem de rio** dentro do município,
 encontrados pela própria série de imagens do satélite Sentinel-2 (uma imagem a cada 5 dias, pixel de 10 m).
 Isso inclui anos em que não houve inventário oficial, como 2017, 2018, 2020, 2023 e 2025.
 
@@ -27,6 +27,10 @@ o mapa mostra também as manchas até 1 km além da divisa, para ver as duas mar
 e as margens de rio foram limpas: saíram as que eram beira de açude ou estrada, cada trecho ficou
 restrito a 30 m da água ou de um arroio, e trechos sobrepostos viraram um só (o cartão lista os
 códigos e anos juntados).
+Depois disso, **todas as manchas do mapa foram conferidas uma a uma** em imagem de alta resolução e
+nas imagens do Sentinel-2 de antes e depois: saíram cerca de 270 que eram lavoura, corte de mata, obra,
+estrada ou açude, e algumas trocaram de classe. O mapa ainda não mostra todas as cicatrizes que existem:
+muitas não foram detectadas pelo modelo.
 
 Como foi feito:
 
